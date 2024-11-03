@@ -1,6 +1,6 @@
 # BASICS   
 
-1.   Read the File
+1.  Read the File
 2.  Get the RELEVANT COLUMNS         
 3.  Use LLM to extract the Themes for the Description COLUMN. This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data                    
 4. Use Embeddings to calculate the Embeddings of the Description COLUMN           
