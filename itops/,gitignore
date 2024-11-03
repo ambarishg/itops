@@ -1,5 +1,5 @@
 __pycache__
-itops/tests/*.csv
+*.csv
 .venv
 *.pyc 
 

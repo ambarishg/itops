@@ -50,6 +50,18 @@ RUN CLUSTER
     Input File
     Insights File
     Number of Clusters
+6.
+Update the Cluster Information Store with the 
+
+For every Run , there will be N Clusters 
+
+Run Name
+Category Name
+Input File
+Insights File
+Number of Clusters
+Cluster Name 
+Parent Cluster Name is NONE Here
 
 ===========================================================
 RERUN CLUSTER
@@ -77,8 +89,21 @@ RERUN CLUSTER
     Input File
     Insights File
     Number of Clusters
+6.
 
-===========================================================
+The Cluster Information Store stores the Cluster Name and its Parent.
+
+Update the Cluster Information Store with the 
+
+For every Run , there will be N Clusters 
+
+Run Name
+Category Name
+Input File
+Insights File
+Number of Clusters
+Cluster Name 
+Parent Cluster Name is NONE Here
 
 ===========================================================
 RERUN SUBCLUSTER
@@ -91,6 +116,7 @@ RERUN SUBCLUSTER
 
     Input Parameters :  Category Name 
     and the Parent Cluster = Parent Cluster Name
+    [ The RUN Number if provided is better ]
 
     Get the Insights File
 
@@ -106,5 +132,20 @@ RERUN SUBCLUSTER
     Input File
     Insights File
     Number of Clusters
+    Parent Cluster Name
+
+6.
+Update the Cluster Information Store with the 
+
+For every Run , there will be N Clusters 
+
+Run Name
+Category Name
+Input File
+Insights File
+Number of Clusters
+Cluster Name 
+Parent Cluster Name 
 
 ===========================================================
+

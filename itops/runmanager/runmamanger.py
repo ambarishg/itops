@@ -7,6 +7,7 @@ import numpy as np
 from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.llm.azureopenaimanager.azure_open_ai_helper import AzureOpenAIManager
 from itops.config.configs import CONFIGS
+import os
 
 class RunManager:
 
@@ -137,6 +138,8 @@ class RunManager:
         
         df_clusters.to_csv(file_name_insights,index = False)
 
+        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
 
         NUMBER_OF_CLUSTERS = num_clusters
@@ -155,12 +158,44 @@ class RunManager:
                             SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
+        
+        for cluster_name in cluster_names:
+            self.insert_cluster_data(RUN_NAME=run_name,
+                                     CATEGORY=CATEGORY,
+                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
+                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                                     CLUSTER_NAME= cluster_name,
+                                     PARENT_CLUSTER_NAME=None)
 
     
+    def get_input_filename_for_rerun_subcluster(self,category_name,parent_run_name):
+        # Fetch and display all records to verify insertion
+        select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
+            AND RUN_NAME = %s AND PARENT_CLUSTER_NAME IS NULL '
+        print(select_query)
+        category_to_search = category_name
+
+        self.mysql_helper.connect()
+        records = self.mysql_helper.fetch_all(select_query,[category_to_search,parent_run_name])
+        self.mysql_helper.close_connection()
+
+        print(records)
+        azure_blob_helper01 = AzureBlobHelper(records[0][2],
+                                              CONFIGS.AZURE_BLOB_STORAGE_KEY,
+                                    records[0][1])
+        
+        csv_helper01 = CSVHelper(azure_blob_helper01)
+
+        df = csv_helper01.read_csv(records[0][0]
+                                   )
+        
+        return df,records[0][0]
+    
+
     def get_input_filename_for_rerun(self,category_name):
         # Fetch and display all records to verify insertion
         select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
-            AND sub_cluster_name = "" '
+            AND PARENT_CLUSTER_NAME IS NULL '
         print(select_query)
         category_to_search = category_name
 
@@ -168,15 +203,19 @@ class RunManager:
         records = self.mysql_helper.fetch_all(select_query,[category_to_search])
         self.mysql_helper.close_connection()
 
-
-        azure_blob_helper01 = AzureBlobHelper(records[0][2],CONFIGS.AZURE_BLOB_STORAGE_KEY,
+        print(records)
+        azure_blob_helper01 = AzureBlobHelper(records[0][2],
+                                              CONFIGS.AZURE_BLOB_STORAGE_KEY,
                                     records[0][1])
+        
         csv_helper01 = CSVHelper(azure_blob_helper01)
 
         df = csv_helper01.read_csv(records[0][0]
                                    )
         
         return df,records[0][0]
+    
+   
     
     def rerun_cluster(self,
                     run_name,
@@ -194,15 +233,18 @@ class RunManager:
         df = self.generate_embedding_dataset(df_dropped)
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
+        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+        
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
                 run_name + \
-                      "-"+ category_name +  \
                         "." +  input_file_name.split(".")[1]
         
         df_clusters.to_csv(file_name_insights,index = False)
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
+
+        
 
         NUMBER_OF_CLUSTERS = num_clusters
         CATEGORY = category_name
@@ -220,16 +262,25 @@ class RunManager:
                             SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
-
+        
+        for cluster_name in cluster_names:
+            self.insert_cluster_data(RUN_NAME=run_name,
+                                     CATEGORY=CATEGORY,
+                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
+                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                                     CLUSTER_NAME= cluster_name,
+                                     PARENT_CLUSTER_NAME=None)
 
     def rerun_sub_cluster(self,
                     run_name,
                     category_name,
                     prompt,
                     num_clusters,
-                    parent_cluster_name):
+                    parent_cluster_name,
+                    parent_run_name):
         
-        df,input_file_name = self.get_input_filename_for_rerun(category_name)
+        df,input_file_name = self.get_input_filename_for_rerun_subcluster(category_name,
+                                                                          parent_run_name)
 
         df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
 
@@ -240,6 +291,8 @@ class RunManager:
         
         df = self.generate_embedding_dataset(df_dropped)
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
+
+        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
 
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
@@ -267,6 +320,14 @@ class RunManager:
                             SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
+        
+        for cluster_name in cluster_names:
+            self.insert_cluster_data(RUN_NAME=run_name,
+                                     CATEGORY=CATEGORY,
+                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
+                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                                     CLUSTER_NAME= cluster_name,
+                                     PARENT_CLUSTER_NAME=None)
 
     def insert_run_log(self, 
                        run_name, 
@@ -291,6 +352,35 @@ class RunManager:
                             INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
                             CONFIGS.AZURE_BLOB_STORAGE_CONTAINER,
                             CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT)
+        
+        self.mysql_helper.execute_query(insert_query, data)
+        self.mysql_helper.close_connection()
+
+    def insert_cluster_data(self,RUN_NAME, 
+                         CATEGORY, 
+                         INPUT_FILE_NAME, 
+                         INSIGHTS_FILE_NAME, 
+                         CLUSTER_NAME, 
+                         PARENT_CLUSTER_NAME):
+        
+        self.mysql_helper.connect()
+        print("CONNECTED to MYSQL")
+
+        insert_query = """
+    INSERT INTO cluster_data (RUN_NAME, 
+                         CATEGORY, 
+                         INPUT_FILE_NAME, 
+                         INSIGHTS_FILE_NAME, 
+                         CLUSTER_NAME, 
+                         PARENT_CLUSTER_NAME)
+    VALUES (%s,%s, %s, %s, %s, %s)
+    """
+        data = (RUN_NAME, 
+                CATEGORY, 
+                INPUT_FILE_NAME, 
+                INSIGHTS_FILE_NAME, 
+                CLUSTER_NAME, 
+                PARENT_CLUSTER_NAME)
         
         self.mysql_helper.execute_query(insert_query, data)
         self.mysql_helper.close_connection()
