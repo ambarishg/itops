@@ -1,13 +1,16 @@
+# BASICS   
+
 1.   Read the File
         * Do not download the File [ Use Memory Streams]
         * Store the File in Azure BLOB
         * All BIG Output should be in Azure BLOB
 2.  Get the RELEVANT COLUMNS         
-3.  Use LLM to extract the Themes for the Description COLUMN
+3.  Use LLM to extract the Themes for the Description COLUMN           
         * This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data            
 4. Use Embeddings to calculate the Embeddings of the Description COLUMN           
 5. Do Clustering based on the Number of Clusters
 
+# MAIN PARAMETERS   
 What are the different parameters which controls the process
 
 1. Category
@@ -15,6 +18,7 @@ What are the different parameters which controls the process
 3. Description COLUMN
 4. OPEN and CLOSE TIME of Ticket
 
+# RUN STORE    
 For each Run store the following
 * Run Name
 * Category Name
@@ -27,6 +31,11 @@ the following
 - Number of Sub Clusters
 - Cluster Name
 
+# CLUSTER RELATIONSHIPS  Information STORE 
+The Cluster Information Store stores the Cluster Name and its Parent.   
+
+# CLUSTER STATS  STORE 
+The Cluster STATS Store stores the STATS of the Cluster. 
 
 We have 3 major scenarios
 
