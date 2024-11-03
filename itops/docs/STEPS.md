@@ -83,11 +83,11 @@ RERUN CLUSTER
 3. Generate Clusters
 4. Store the Insights in BLOB
 5. Update the RUN LOG with the following parameters
-    Run Name
-    Category Name
-    Input File
-    Insights File
-    Number of Clusters
+    * Run Name
+    * Category Name
+    * Input File
+    * Insights File
+    * Number of Clusters
 6.
 
 The Cluster Information Store stores the Cluster Name and its Parent.
@@ -126,12 +126,11 @@ RERUN SUBCLUSTER
 3. Generate Clusters
 4. Store the Insights in BLOB
 5. Update the RUN LOG with the following parameters
-    Run Name
-    Category Name
-    Input File
-    Insights File
-    Number of Clusters
-    Parent Cluster Name
+    * Run Name
+    * Category Name
+    * Input File
+    * Insights File
+    * Number of Clusters
 
 6.
 Update the Cluster Information Store with the following  
