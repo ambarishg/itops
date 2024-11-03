@@ -5,8 +5,7 @@
         * Store the File in Azure BLOB
         * All BIG Output should be in Azure BLOB
 2.  Get the RELEVANT COLUMNS         
-3.  Use LLM to extract the Themes for the Description COLUMN           
-        * This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data            
+3.  Use LLM to extract the Themes for the Description COLUMN. This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data                    
 4. Use Embeddings to calculate the Embeddings of the Description COLUMN           
 5. Do Clustering based on the Number of Clusters
 
@@ -37,15 +36,14 @@ The Cluster Information Store stores the Cluster Name and its Parent.
 # CLUSTER STATS  STORE 
 The Cluster STATS Store stores the STATS of the Cluster. 
 
+# SCENARIOS 
 We have 3 major scenarios
 
 1. RUN CLUSTER
 2. RERUN CLUSTER
 3. RERUN SUB CLUSTER
 
-<hr/>
-RUN CLUSTER           
-<hr/>
+## SCENARIO - RUN CLUSTER       
 
 1. Generate Themes
 2. Generate Embeddings
@@ -69,9 +67,8 @@ For every Run , there will be N Clusters
 * Cluster Name 
 * Parent Cluster Name is NONE Here
 
-<hr/>
-RERUN CLUSTER            
-<hr/>
+## SCENARIO - RERUN CLUSTER       
+
 
 1. DO NOT Generate Themes
 
@@ -110,9 +107,7 @@ For every Run , there will be N Clusters
 * Cluster Name 
 * Parent Cluster Name is NONE Here
 
-<hr/>
-RERUN SUBCLUSTER           
-<hr/>
+## SCENARIO - RERUN SUB CLUSTER    
 
 1. DO NOT Generate Themes
 
