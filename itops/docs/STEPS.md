@@ -16,12 +16,12 @@ What are the different parameters which controls the process
 4. OPEN and CLOSE TIME of Ticket
 
 For each Run store the following
-Run Name
-Category Name
-Input File
-Insights File
-Number of Clusters
-For the Sub Cluster, to maintain the PARENT CHILD relationship store
+* Run Name
+* Category Name
+* Input File
+* Insights File
+* Number of Clusters
+* For the Sub Cluster, to maintain the PARENT CHILD relationship store
 the following
 - Parent Cluster Name
 - Number of Sub Clusters
@@ -45,15 +45,14 @@ RUN CLUSTER
 3. Generate Clusters
 4. Store the Insights in BLOB
 5. Update the RUN LOG with the following parameters
-    Run Name
-    Category Name
-    Input File
-    Insights File
-    Number of Clusters
+    * Run Name
+    * Category Name
+    * Input File
+    * Insights File
+    * Number of Clusters
 6.
-Update the Cluster Information Store with the 
-
-For every Run , there will be N Clusters 
+Update the Cluster Information Store with the following       
+For every Run , there will be N Clusters       
 
 Run Name
 Category Name
@@ -135,9 +134,9 @@ RERUN SUBCLUSTER
     Parent Cluster Name
 
 6.
-Update the Cluster Information Store with the 
+Update the Cluster Information Store with the following  
 
-For every Run , there will be N Clusters 
+For every Run , there will be N Clusters        
 
 Run Name
 Category Name
