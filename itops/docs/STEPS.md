@@ -79,3 +79,32 @@ RERUN CLUSTER
     Number of Clusters
 
 ===========================================================
+
+===========================================================
+RERUN SUBCLUSTER
+
+===========================================================
+
+1. DO NOT Generate Themes
+
+    Query the RUN LOG 
+
+    Input Parameters :  Category Name 
+    and the Parent Cluster = Parent Cluster Name
+
+    Get the Insights File
+
+    Read the Insights File and Get the Themes and the Other Columns
+
+
+2. Generate Embeddings
+3. Generate Clusters
+4. Store the Insights in BLOB
+5. Update the RUN LOG with the following parameters
+    Run Name
+    Category Name
+    Input File
+    Insights File
+    Number of Clusters
+
+===========================================================
