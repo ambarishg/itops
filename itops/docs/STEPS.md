@@ -1,12 +1,12 @@
 1. Read the File
-- Do not download the File [ Use Memory Streams]
-- Store the File in Azure BLOB
-- All BIG Output should be in Azure BLOB
-2. Get the RELEVANT COLUMNS
-3. Use LLM to extract the Themes for the Description COLUMN
-- This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data
-4.Use Embeddings to calculate the Embeddings of the Description COLUMN
-5. Do Clustering based on the Number of Clusters
+* Do not download the File [ Use Memory Streams]
+* Store the File in Azure BLOB
+* All BIG Output should be in Azure BLOB
+1.  Get the RELEVANT COLUMNS         
+2.  Use LLM to extract the Themes for the Description COLUMN
+* This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data            
+3. Use Embeddings to calculate the Embeddings of the Description COLUMN           
+4. Do Clustering based on the Number of Clusters
 
 What are the different parameters which controls the process
 
