@@ -1,9 +1,6 @@
 # BASICS   
 
 1.   Read the File
-        * Do not download the File [ Use Memory Streams]
-        * Store the File in Azure BLOB
-        * All BIG Output should be in Azure BLOB
 2.  Get the RELEVANT COLUMNS         
 3.  Use LLM to extract the Themes for the Description COLUMN. This is a COSTLY thing. In cases of RERUN / RERUN with Sub Clusters ,Reuse the Data                    
 4. Use Embeddings to calculate the Embeddings of the Description COLUMN           
@@ -24,11 +21,9 @@ For each Run store the following
 * Input File
 * Insights File
 * Number of Clusters
-* For the Sub Cluster, to maintain the PARENT CHILD relationship store
-the following
-- Parent Cluster Name
-- Number of Sub Clusters
-- Cluster Name
+* For the Sub Cluster, to maintain the PARENT CHILD relationship store the following             
+  - Parent Cluster Name
+  - Number of Sub Clusters
 
 # CLUSTER RELATIONSHIPS  Information STORE 
 The Cluster Information Store stores the Cluster Name and its Parent.   
@@ -143,7 +138,34 @@ For every Run , there will be N Clusters
 * Insights File
 * Number of Clusters
 * Cluster Name 
-* Parent Cluster Name HAS A VALUE
+* Parent Cluster Name HAS A VALUE    
 
-===========================================================
+
+# IMPLEMENTATION DETAILS      
+
+## Files           
+
+1. Input File           
+2. Insights File      
+   
+* Do not download the File [ Use Memory Streams]
+* Store the File in Azure BLOB
+* All BIG Output should be in Azure BLOB
+
+## Stores 
+
+Store in Relational Database Stores . Done in Maria DB now 
+
+## LLM 
+
+* Azure Open AI Models
+
+## Clustering  
+
+* KMeans   
+
+## Embedding 
+
+* Sentence Transformer Models 
+* Azure Open AI ADA
 
