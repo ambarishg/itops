@@ -1,0 +1,9 @@
+mysql-connector-python
+python-dotenv
+pydantic~=2.7.3
+pydantic-settings~=2.2.1
+openai
+pandas
+azure-storage-blob==12.19.0
+sentence-transformers
+scikit-learn
