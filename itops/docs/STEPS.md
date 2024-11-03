@@ -34,11 +34,9 @@ We have 3 major scenarios
 2. RERUN CLUSTER
 3. RERUN SUB CLUSTER
 
-======================================================
-
-RUN CLUSTER
-
-===========================================================
+<hr/>
+RUN CLUSTER           
+<hr/>
 
 1. Generate Themes
 2. Generate Embeddings
@@ -62,10 +60,9 @@ For every Run , there will be N Clusters
 * Cluster Name 
 * Parent Cluster Name is NONE Here
 
-===========================================================
-RERUN CLUSTER
-
-===========================================================
+<hr/>
+RERUN CLUSTER            
+<hr/>
 
 1. DO NOT Generate Themes
 
@@ -104,10 +101,9 @@ For every Run , there will be N Clusters
 * Cluster Name 
 * Parent Cluster Name is NONE Here
 
-===========================================================
-RERUN SUBCLUSTER
-
-===========================================================
+<hr/>
+RERUN SUBCLUSTER           
+<hr/>
 
 1. DO NOT Generate Themes
 

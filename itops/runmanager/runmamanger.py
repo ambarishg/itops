@@ -245,7 +245,7 @@ class RunManager:
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
 
-        
+        os.remove(file_name_insights)
 
         NUMBER_OF_CLUSTERS = num_clusters
         CATEGORY = category_name
