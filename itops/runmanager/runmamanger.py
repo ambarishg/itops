@@ -13,7 +13,7 @@ class RunManager:
 
     def __init__(self,description_column_name,
                  embedding_model_name):
-        self.mysql_helper = MySQLHelper(CONFIGS.HOST,
+        self.db_helper = MySQLHelper(CONFIGS.HOST,
                            CONFIGS.USERNAME_MYSQL,
                            CONFIGS.PASSWORD, "itops")
         
@@ -176,9 +176,9 @@ class RunManager:
         print(select_query)
         category_to_search = category_name
 
-        self.mysql_helper.connect()
-        records = self.mysql_helper.fetch_all(select_query,[category_to_search,parent_run_name])
-        self.mysql_helper.close_connection()
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search,parent_run_name])
+        self.db_helper.close_connection()
 
         print(records)
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
@@ -200,9 +200,9 @@ class RunManager:
         print(select_query)
         category_to_search = category_name
 
-        self.mysql_helper.connect()
-        records = self.mysql_helper.fetch_all(select_query,[category_to_search])
-        self.mysql_helper.close_connection()
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
 
         print(records)
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
@@ -340,7 +340,7 @@ class RunManager:
                          PARENT_CLUSTER_NAME, 
                          NUMBER_OF_SUBCLUSTERS):
         
-        self.mysql_helper.connect()
+        self.db_helper.connect()
 
         insert_query = """
     INSERT INTO run_log (RUN_NAME, SUB_CLUSTER_NAME, NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
@@ -354,8 +354,8 @@ class RunManager:
                             CONFIGS.AZURE_BLOB_STORAGE_CONTAINER,
                             CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT)
         
-        self.mysql_helper.execute_query(insert_query, data)
-        self.mysql_helper.close_connection()
+        self.db_helper.execute_query(insert_query, data)
+        self.db_helper.close_connection()
 
     def insert_cluster_data(self,RUN_NAME, 
                          CATEGORY, 
@@ -364,7 +364,7 @@ class RunManager:
                          CLUSTER_NAME, 
                          PARENT_CLUSTER_NAME):
         
-        self.mysql_helper.connect()
+        self.db_helper.connect()
         print("CONNECTED to MYSQL")
 
         insert_query = """
@@ -383,5 +383,5 @@ class RunManager:
                 CLUSTER_NAME, 
                 PARENT_CLUSTER_NAME)
         
-        self.mysql_helper.execute_query(insert_query, data)
-        self.mysql_helper.close_connection()
+        self.db_helper.execute_query(insert_query, data)
+        self.db_helper.close_connection()
