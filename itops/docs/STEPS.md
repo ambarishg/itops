@@ -52,15 +52,15 @@ RUN CLUSTER
     * Number of Clusters
 6.
 Update the Cluster Information Store with the following       
-For every Run , there will be N Clusters       
+For every Run , there will be N Clusters          
 
-Run Name
-Category Name
-Input File
-Insights File
-Number of Clusters
-Cluster Name 
-Parent Cluster Name is NONE Here
+* Run Name
+* Category Name
+* Input File
+* Insights File
+* Number of Clusters
+* Cluster Name 
+* Parent Cluster Name is NONE Here
 
 ===========================================================
 RERUN CLUSTER
@@ -96,13 +96,13 @@ Update the Cluster Information Store with the
 
 For every Run , there will be N Clusters 
 
-Run Name
-Category Name
-Input File
-Insights File
-Number of Clusters
-Cluster Name 
-Parent Cluster Name is NONE Here
+* Run Name
+* Category Name
+* Input File
+* Insights File
+* Number of Clusters
+* Cluster Name 
+* Parent Cluster Name is NONE Here
 
 ===========================================================
 RERUN SUBCLUSTER
@@ -137,13 +137,13 @@ Update the Cluster Information Store with the following
 
 For every Run , there will be N Clusters        
 
-Run Name
-Category Name
-Input File
-Insights File
-Number of Clusters
-Cluster Name 
-Parent Cluster Name 
+* Run Name
+* Category Name
+* Input File
+* Insights File
+* Number of Clusters
+* Cluster Name 
+* Parent Cluster Name HAS A VALUE
 
 ===========================================================
 

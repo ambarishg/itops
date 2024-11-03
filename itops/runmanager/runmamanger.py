@@ -55,6 +55,7 @@ class RunManager:
         df = self.csv_helper.read_csv(filename)
 
         reply_list = []
+        
         for i in range(len(df)):
             content = df.iloc[i][self.description_column_name]
             content = str(content)
