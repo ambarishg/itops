@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 import pandas as pd
 import numpy as np
 from itops.db.mysql.mysqlhelper import MySQLHelper
+from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
 from itops.llm.azureopenaimanager.azure_open_ai_helper import AzureOpenAIManager
 from itops.config.configs import CONFIGS
 import os
@@ -12,8 +13,14 @@ import os
 class RunManager:
 
     def __init__(self,description_column_name,
-                 embedding_model_name):
-        self.db_helper = MySQLHelper(CONFIGS.HOST,
+                 embedding_model_name,db_type = "MYSQL"):
+        
+        self.db_type = db_type
+
+        if self.db_type == "DUCKDB":
+            self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
+        elif self.db_type == "MYSQL":
+            self.db_helper = MySQLHelper(CONFIGS.HOST,
                            CONFIGS.USERNAME_MYSQL,
                            CONFIGS.PASSWORD, "itops")
         
@@ -173,6 +180,9 @@ class RunManager:
         # Fetch and display all records to verify insertion
         select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
             AND RUN_NAME = %s AND PARENT_CLUSTER_NAME IS NULL '
+        
+        select_query = self.query_helper(select_query)
+
         print(select_query)
         category_to_search = category_name
 
@@ -197,6 +207,9 @@ class RunManager:
         # Fetch and display all records to verify insertion
         select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
             AND PARENT_CLUSTER_NAME IS NULL '
+        
+        select_query = self.query_helper(select_query)
+
         print(select_query)
         category_to_search = category_name
 
@@ -205,6 +218,9 @@ class RunManager:
         self.db_helper.close_connection()
 
         print(records)
+
+        if (len(records) == 0):
+            return None , None
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
                                               CONFIGS.AZURE_BLOB_STORAGE_KEY,
                                     records[0][1])
@@ -226,6 +242,10 @@ class RunManager:
         
         df,input_file_name = self.get_input_filename_for_rerun(category_name)
 
+        if df is None:
+            print("No Valid Entries for RERUN")
+            return
+        
         df_dropped = df.drop('embeddings', axis=1)
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
@@ -264,6 +284,8 @@ class RunManager:
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
+        print(f"CLUSTER Names are {cluster_names}")
+        
         for cluster_name in cluster_names:
             self.insert_cluster_data(RUN_NAME=run_name,
                                      CATEGORY=CATEGORY,
@@ -282,7 +304,10 @@ class RunManager:
         
         df,input_file_name = self.get_input_filename_for_rerun_subcluster(category_name,
                                                                           parent_run_name)
-
+        if df is None:
+            print("No Valid Entries for RERUN SUBCLUSTER")
+            return
+        
         df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
 
         df_dropped = df_parent_cluster.drop('embeddings', axis=1)
@@ -348,6 +373,9 @@ class RunManager:
                             CONTAINER_NAME,ACCOUNT_NAME)
     VALUES (%s,%s, %s, %s, %s, %s, %s, %s,%s, %s)
     """
+        
+        insert_query = self.query_helper(insert_query)
+
         data = (run_name, SUB_CLUSTER_NAME, NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS, CATEGORY, 
                             INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
@@ -363,25 +391,44 @@ class RunManager:
                          INSIGHTS_FILE_NAME, 
                          CLUSTER_NAME, 
                          PARENT_CLUSTER_NAME):
-        
+        # Establish a connection to the database
         self.db_helper.connect()
-        print("CONNECTED to MYSQL")
+        print("CONNECTED to the database")
 
+        # Define the insert query
         insert_query = """
-    INSERT INTO cluster_data (RUN_NAME, 
-                         CATEGORY, 
-                         INPUT_FILE_NAME, 
-                         INSIGHTS_FILE_NAME, 
-                         CLUSTER_NAME, 
-                         PARENT_CLUSTER_NAME)
-    VALUES (%s,%s, %s, %s, %s, %s)
-    """
+        INSERT INTO cluster_data (RUN_NAME, 
+                                CATEGORY, 
+                                INPUT_FILE_NAME, 
+                                INSIGHTS_FILE_NAME, 
+                                CLUSTER_NAME, 
+                                PARENT_CLUSTER_NAME)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+
+        insert_query = self.query_helper(insert_query)
+        
+        # Prepare the data tuple
         data = (RUN_NAME, 
                 CATEGORY, 
                 INPUT_FILE_NAME, 
                 INSIGHTS_FILE_NAME, 
                 CLUSTER_NAME, 
                 PARENT_CLUSTER_NAME)
+
+        try:
+            # Execute the insert query with the provided data
+            self.db_helper.execute_query(insert_query, data)
+            print("Data inserted successfully.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        finally:
+            # Ensure the database connection is closed
+            self.db_helper.close_connection()
+            
+    def query_helper(self,query):
+
+        if self.db_type == "DUCKDB":
+            query = query.replace('%s', '?')
         
-        self.db_helper.execute_query(insert_query, data)
-        self.db_helper.close_connection()
+        return(query)
