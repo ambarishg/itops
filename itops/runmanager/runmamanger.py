@@ -1,11 +1,14 @@
 from itops.storage.azure_blob.azure_blob_helper import AzureBlobHelper
 from itops.storage.azure_blob.csv_helper import CSVHelper
+from itops.storage.azure_blob.parquet_helper import ParquetHelper
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 import pandas as pd
 import numpy as np
+
 from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
+
 from itops.llm.azureopenaimanager.azure_open_ai_helper import AzureOpenAIManager
 from itops.config.configs import CONFIGS
 import os
@@ -13,9 +16,12 @@ import os
 class RunManager:
 
     def __init__(self,description_column_name,
-                 embedding_model_name,db_type = "MYSQL"):
+                 embedding_model_name,
+                 db_type = "MYSQL",
+                 file_type = "CSV"):
         
         self.db_type = db_type
+        self.file_type = file_type
 
         if self.db_type == "DUCKDB":
             self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
@@ -33,7 +39,9 @@ class RunManager:
                                           deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
                     api_version="2023-05-15")
         
+     
         self.csv_helper = CSVHelper(self.azure_blob_helper)
+        
         self.description_column_name = description_column_name
         self.embedding_model_name = embedding_model_name
 
@@ -59,7 +67,7 @@ class RunManager:
             2. Embeddings in the NEW Dataset
         """
 
-        df = self.csv_helper.read_csv(filename)
+        df = self.csv_helper.read_file(filename)
 
         reply_list = []
         
@@ -84,7 +92,7 @@ class RunManager:
         for i in range(len(df)):
             content = df.iloc[i]["themes"]
             embedding = self.get_embedding_query_vector(content,self.embedding_model_name)
-            embedding_list.append(embedding)
+            embedding_list.append(np.array(embedding))
             print(f"Completed EMBEDDING  {i+1} ROW")
 
         df["embeddings"] = embedding_list
@@ -97,7 +105,7 @@ class RunManager:
                           ):
         
         kmeans = KMeans(n_clusters=num_clusters, random_state=0)
-        embedding_array = np.array(df["embeddings"].tolist())
+        embedding_array = (df["embeddings"].tolist())
         kmeans.fit(embedding_array)
         labels = kmeans.labels_
         df["CLUSTERS"] = labels
@@ -142,13 +150,15 @@ class RunManager:
             "-"+ \
                 run_name + \
                       "-"+ category_name +  \
-                        "." +  input_file_name.split(".")[1]
+                        ".parquet"
         
-        df_clusters.to_csv(file_name_insights,index = False)
+        df_clusters.to_parquet(file_name_insights,index = False)
 
         cluster_names = df_clusters['CLUSTER_NAMES'].unique()
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
+
+        os.remove(file_name_insights)
 
         NUMBER_OF_CLUSTERS = num_clusters
         CATEGORY = category_name
@@ -195,9 +205,9 @@ class RunManager:
                                               CONFIGS.AZURE_BLOB_STORAGE_KEY,
                                     records[0][1])
         
-        csv_helper01 = CSVHelper(azure_blob_helper01)
+        file_helper01 = self.get_file_helper(azure_blob_helper01)
 
-        df = csv_helper01.read_csv(records[0][0]
+        df = file_helper01.read_file(records[0][0]
                                    )
         
         return df,records[0][0]
@@ -225,12 +235,19 @@ class RunManager:
                                               CONFIGS.AZURE_BLOB_STORAGE_KEY,
                                     records[0][1])
         
-        csv_helper01 = CSVHelper(azure_blob_helper01)
+        file_helper01 = self.get_file_helper(azure_blob_helper01)
 
-        df = csv_helper01.read_csv(records[0][0]
+        df = file_helper01.read_file(records[0][0]
                                    )
         
         return df,records[0][0]
+
+    def get_file_helper(self, azure_blob_helper01):
+        if self.file_type == "CSV":
+            file_helper01 = CSVHelper(azure_blob_helper01)
+        elif self.file_type == "PARQUET":
+            file_helper01 = ParquetHelper(azure_blob_helper01)
+        return file_helper01
     
    
     
@@ -246,12 +263,12 @@ class RunManager:
             print("No Valid Entries for RERUN")
             return
         
-        df_dropped = df.drop('embeddings', axis=1)
+        df_dropped = df
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
 
-        
-        df = self.generate_embedding_dataset(df_dropped)
+        df = df_dropped
+
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
         cluster_names = df_clusters['CLUSTER_NAMES'].unique()
@@ -259,9 +276,9 @@ class RunManager:
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
                 run_name + \
-                        "." +  input_file_name.split(".")[1]
-        
-        df_clusters.to_csv(file_name_insights,index = False)
+                        ".parquet" 
+                
+        df_clusters.to_parquet(file_name_insights,index = False)
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
 
@@ -310,12 +327,12 @@ class RunManager:
         
         df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
 
-        df_dropped = df_parent_cluster.drop('embeddings', axis=1)
+        df_dropped = df_parent_cluster
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
+ 
+        df = df_dropped
 
-        
-        df = self.generate_embedding_dataset(df_dropped)
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
         cluster_names = df_clusters['CLUSTER_NAMES'].unique()
@@ -323,12 +340,13 @@ class RunManager:
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
                 run_name + \
-                      "-"+ category_name +  \
-                        "." +  input_file_name.split(".")[1]
+                        ".parquet"
         
-        df_clusters.to_csv(file_name_insights,index = False)
+        df_clusters.to_parquet(file_name_insights,index = False)
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
+
+        os.remove(file_name_insights)
 
         NUMBER_OF_CLUSTERS = None
         CATEGORY = category_name

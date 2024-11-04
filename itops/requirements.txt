@@ -8,3 +8,4 @@ azure-storage-blob==12.19.0
 sentence-transformers
 scikit-learn
 duckdb
+pyarrow

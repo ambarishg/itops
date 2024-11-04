@@ -93,5 +93,5 @@ class AzureBlobHelper:
                                                credential=self.account_key)
         container_client = blob_service_client.get_container_client(self.container_name)
         blob_client = container_client.get_blob_client(blob_name)
-       # Download the blob as a stream
+        # Download the blob as a stream
         return(blob_client.download_blob()) 
