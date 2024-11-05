@@ -162,7 +162,8 @@ cython_debug/
 #.idea/
 
 .venv
-tests/
+itops/tests/*.csv
+itops/tests/*.db
 .env
-
+itops/tests/*.duckdb
 
