@@ -38,7 +38,8 @@ class RunManager:
         self.azure_open_ai_helper = AzureOpenAIManager(endpoint=CONFIGS.AZURE_OPENAI_ENDPOINT,
                                           api_key =CONFIGS.AZURE_OPENAI_API_KEY,
                                           deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
-                    api_version="2023-05-15")
+                    # api_version="2023-05-15"
+                    api_version = "2024-02-01")
         
      
         self.csv_helper = CSVHelper(self.azure_blob_helper)
