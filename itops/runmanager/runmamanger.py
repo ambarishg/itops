@@ -8,6 +8,7 @@ import numpy as np
 
 from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
+from itops.db.sqlite.sqlitehelper import SQLiteDatabaseHelper
 
 from itops.llm.azureopenaimanager.azure_open_ai_helper import AzureOpenAIManager
 from itops.config.configs import CONFIGS
@@ -27,6 +28,8 @@ class RunManager:
             self.db_helper = MySQLHelper(CONFIGS.HOST,
                            CONFIGS.USERNAME_MYSQL,
                            CONFIGS.PASSWORD, "itops")
+        elif self.db_type =="SQLITE":
+            self.db_helper = SQLiteDatabaseHelper("itops.db")
         
         self.azure_blob_helper = AzureBlobHelper(CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT,
                                                       CONFIGS.AZURE_BLOB_STORAGE_KEY,
@@ -225,7 +228,6 @@ class RunManager:
         records = self.db_helper.fetch_all(select_query,[category_to_search])
         self.db_helper.close_connection()
 
-        print(records)
 
         if (len(records) == 0):
             return None , None
@@ -320,7 +322,9 @@ class RunManager:
             print("No Valid Entries for RERUN SUBCLUSTER")
             return
         
+        
         df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
+        
 
         df_dropped = df_parent_cluster
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
@@ -329,6 +333,7 @@ class RunManager:
         df = df_dropped
 
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
+        print(df_clusters)
 
         cluster_names = df_clusters['CLUSTER_NAMES'].unique()
 
@@ -441,7 +446,7 @@ class RunManager:
             
     def query_helper(self,query):
 
-        if self.db_type == "DUCKDB":
+        if self.db_type == "DUCKDB" or self.db_type == "SQLITE":
             query = query.replace('%s', '?')
         
         return(query)
