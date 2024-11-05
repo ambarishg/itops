@@ -3,8 +3,6 @@ sys.path.append("../../")
 
 from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.config.configs import CONFIGS
-
-print(CONFIGS)
 mysql_helper = MySQLHelper(CONFIGS.HOST,
                            CONFIGS.USERNAME_MYSQL,
                            CONFIGS.PASSWORD, "itops")
