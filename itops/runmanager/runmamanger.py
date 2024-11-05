@@ -17,11 +17,9 @@ class RunManager:
 
     def __init__(self,description_column_name,
                  embedding_model_name,
-                 db_type = "MYSQL",
-                 file_type = "CSV"):
+                 db_type = "MYSQL"):
         
         self.db_type = db_type
-        self.file_type = file_type
 
         if self.db_type == "DUCKDB":
             self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
@@ -243,10 +241,7 @@ class RunManager:
         return df,records[0][0]
 
     def get_file_helper(self, azure_blob_helper01):
-        if self.file_type == "CSV":
-            file_helper01 = CSVHelper(azure_blob_helper01)
-        elif self.file_type == "PARQUET":
-            file_helper01 = ParquetHelper(azure_blob_helper01)
+        file_helper01 = ParquetHelper(azure_blob_helper01)
         return file_helper01
     
    
