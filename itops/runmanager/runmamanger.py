@@ -4,48 +4,66 @@ from itops.storage.azure_blob.parquet_helper import ParquetHelper
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 import pandas as pd
-import numpy as np
 
-from itops.db.mysql.mysqlhelper import MySQLHelper
-from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
-from itops.db.sqlite.sqlitehelper import SQLiteDatabaseHelper
 
-from itops.llm.azureopenaimanager.azure_open_ai_helper import AzureOpenAIManager
-from itops.config.configs import CONFIGS
+from itops.embeddings.embedding_generator import EmbeddingGenerator
 import os
 
 class RunManager:
 
-    def __init__(self,description_column_name,
+    def __init__(self,
+                 description_column_name,
                  embedding_model_name,
-                 db_type = "MYSQL"):
+                 azure_open_ai_helper,
+                 azure_blob_account,
+                 azure_blob_container,
+                 azure_storage_key,
+                 db_helper,
+                 db_type = "MYSQL",
+                 ):
         
         self.db_type = db_type
 
-        if self.db_type == "DUCKDB":
-            self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
-        elif self.db_type == "MYSQL":
-            self.db_helper = MySQLHelper(CONFIGS.HOST,
-                           CONFIGS.USERNAME_MYSQL,
-                           CONFIGS.PASSWORD, "itops")
-        elif self.db_type =="SQLITE":
-            self.db_helper = SQLiteDatabaseHelper("itops.db")
+        # if self.db_type == "DUCKDB":
+        #     self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
+        # elif self.db_type == "MYSQL":
+        #     self.db_helper = MySQLHelper(CONFIGS.HOST,
+        #                    CONFIGS.USERNAME_MYSQL,
+        #                    CONFIGS.PASSWORD, "itops")
+        # elif self.db_type =="SQLITE":
+        #     self.db_helper = SQLiteDatabaseHelper("itops.db")
         
-        self.azure_blob_helper = AzureBlobHelper(CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT,
-                                                      CONFIGS.AZURE_BLOB_STORAGE_KEY,
-                                                      CONFIGS.AZURE_BLOB_STORAGE_CONTAINER)
-        
-        self.azure_open_ai_helper = AzureOpenAIManager(endpoint=CONFIGS.AZURE_OPENAI_ENDPOINT,
-                                          api_key =CONFIGS.AZURE_OPENAI_API_KEY,
-                                          deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
-                    # api_version="2023-05-15"
-                    api_version = "2024-02-01")
-        
-     
-        self.csv_helper = CSVHelper(self.azure_blob_helper)
-        
+       
+        # self.azure_open_ai_helper = AzureOpenAIManager(endpoint=CONFIGS.AZURE_OPENAI_ENDPOINT,
+        #                                   api_key =CONFIGS.AZURE_OPENAI_API_KEY,
+        #                                   deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
+        #             # api_version="2023-05-15"
+        #             api_version = "2024-02-01")
+
+        self.set_storage_helpers(azure_blob_account, 
+                                 azure_blob_container, 
+                                 azure_storage_key)
+
+        self.azure_open_ai_helper= azure_open_ai_helper
+        self.db_helper = db_helper
         self.description_column_name = description_column_name
         self.embedding_model_name = embedding_model_name
+        self.generator = EmbeddingGenerator(self.embedding_model_name)
+
+    def set_storage_helpers(self, 
+                            azure_blob_account, 
+                            azure_blob_container, 
+                            azure_storage_key):
+        
+        self.azure_blob_account =azure_blob_account   
+        self.azure_blob_container = azure_blob_container
+        self.azure_blob_storage_key = azure_storage_key
+        
+        self.azure_blob_helper = AzureBlobHelper(self.azure_blob_account,
+                                                      self.azure_blob_storage_key,
+                                                      self.azure_blob_container)
+     
+        self.csv_helper = CSVHelper(self.azure_blob_helper)
 
     def get_embedding_query_vector(self,query,model_name):
         """Get the vector of the query
@@ -60,7 +78,8 @@ class RunManager:
         query_vector = model.encode(query)
         return query_vector
         
-    def generate_themes_and_embeddings(self,filename,user_input):
+    def generate_themes_and_embeddings(self,filename,
+                                       user_input):
 
         """_summary_
 
@@ -90,15 +109,8 @@ class RunManager:
         return df_new
 
     def generate_embedding_dataset(self, df):
-        embedding_list = []
-        for i in range(len(df)):
-            content = df.iloc[i]["themes"]
-            embedding = self.get_embedding_query_vector(content,self.embedding_model_name)
-            embedding_list.append(np.array(embedding))
-            print(f"Completed EMBEDDING  {i+1} ROW")
-
-        df["embeddings"] = embedding_list
-        return df
+        df_with_embeddings = self.generator.generate_embedding_dataset(df)
+        return df_with_embeddings
     
     def generate_clusters(self,
                           df,
@@ -191,7 +203,7 @@ class RunManager:
     def get_input_filename_for_rerun_subcluster(self,category_name,parent_run_name):
         # Fetch and display all records to verify insertion
         select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
-            AND RUN_NAME = %s AND PARENT_CLUSTER_NAME IS NULL '
+            AND RUN_NAME = %s '
         
         select_query = self.query_helper(select_query)
 
@@ -204,7 +216,7 @@ class RunManager:
 
         print(records)
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
-                                              CONFIGS.AZURE_BLOB_STORAGE_KEY,
+                                              self.azure_blob_storage_key,
                                     records[0][1])
         
         file_helper01 = self.get_file_helper(azure_blob_helper01)
@@ -233,7 +245,7 @@ class RunManager:
         if (len(records) == 0):
             return None , None
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
-                                              CONFIGS.AZURE_BLOB_STORAGE_KEY,
+                                              self.azure_blob_storage_key,
                                     records[0][1])
         
         file_helper01 = self.get_file_helper(azure_blob_helper01)
@@ -398,8 +410,8 @@ class RunManager:
         data = (run_name, SUB_CLUSTER_NAME, NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS, CATEGORY, 
                             INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
-                            CONFIGS.AZURE_BLOB_STORAGE_CONTAINER,
-                            CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT)
+                            self.azure_blob_container,
+                            self.azure_blob_account)
         
         self.db_helper.execute_query(insert_query, data)
         self.db_helper.close_connection()

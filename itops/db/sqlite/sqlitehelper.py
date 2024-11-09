@@ -1,5 +1,4 @@
 import sqlite3
-from abc import ABC, abstractmethod
 from itops.db.databasehelper import DatabaseHelper
 
 class SQLiteDatabaseHelper(DatabaseHelper):
