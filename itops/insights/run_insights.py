@@ -65,6 +65,7 @@ class InsightsManager:
         
         file_helper01 = self.get_file_helper(azure_blob_helper01)
 
+        print(records[0][0])
         df = file_helper01.read_file(records[0][0]
                                    )
        
