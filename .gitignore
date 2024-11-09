@@ -166,4 +166,9 @@ itops/tests/*.csv
 itops/tests/*.db
 .env
 itops/tests/*.duckdb
+biz/tests_biz/*.csv
+biz/tests_biz/*.db
+biz/tests_biz/*.csv
+biz/tests_biz/*.duckdb
+
 
