@@ -17,27 +17,12 @@ class InsightsManager:
                  db_type ="SQLITE",):
         self.db_type = db_type
     
-        # if self.db_type == "DUCKDB":
-        #     self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
-        # elif self.db_type == "MYSQL":
-        #     self.db_helper = MySQLHelper(CONFIGS.HOST,
-        #                    CONFIGS.USERNAME_MYSQL,
-        #                    CONFIGS.PASSWORD, "itops")
-        # elif self.db_type =="SQLITE":
-        #     self.db_helper = SQLiteDatabaseHelper("itops.db")
-
         self.db_helper = db_helper
         self.azure_open_ai_helper = llm_helper
         self.azure_blob_account = azure_blob_account
         self.azure_blob_container = azure_blob_container
         self.azure_storage_key = azure_storage_key
         
-        # self.azure_open_ai_helper = AzureOpenAIManager(endpoint=CONFIGS.AZURE_OPENAI_ENDPOINT,
-        #                                   api_key =CONFIGS.AZURE_OPENAI_API_KEY,
-        #                                   deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
-        #                               api_version = "2024-02-01")
-    
-  
     def get_input_filename(self,
                            run_name,
                            cluster_name = None):
