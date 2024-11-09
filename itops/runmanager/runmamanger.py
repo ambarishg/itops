@@ -24,21 +24,7 @@ class RunManager:
         
         self.db_type = db_type
 
-        # if self.db_type == "DUCKDB":
-        #     self.db_helper = DuckDBDatabaseHelper("itops.duckdb")
-        # elif self.db_type == "MYSQL":
-        #     self.db_helper = MySQLHelper(CONFIGS.HOST,
-        #                    CONFIGS.USERNAME_MYSQL,
-        #                    CONFIGS.PASSWORD, "itops")
-        # elif self.db_type =="SQLITE":
-        #     self.db_helper = SQLiteDatabaseHelper("itops.db")
-        
-       
-        # self.azure_open_ai_helper = AzureOpenAIManager(endpoint=CONFIGS.AZURE_OPENAI_ENDPOINT,
-        #                                   api_key =CONFIGS.AZURE_OPENAI_API_KEY,
-        #                                   deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
-        #             # api_version="2023-05-15"
-        #             api_version = "2024-02-01")
+  
 
         self.set_storage_helpers(azure_blob_account, 
                                  azure_blob_container, 
@@ -178,7 +164,6 @@ class RunManager:
         CATEGORY = category_name
         INPUT_FILE_NAME = input_file_name
         INSIGHTS_FILE_NAME = file_name_insights
-        SUB_CLUSTER_NAME =None
         PARENT_CLUSTER_NAME = None
         NUMBER_OF_SUBCLUSTERS = None
 
@@ -187,7 +172,6 @@ class RunManager:
                             CATEGORY, 
                             INPUT_FILE_NAME, 
                             INSIGHTS_FILE_NAME, 
-                            SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
@@ -298,7 +282,6 @@ class RunManager:
         CATEGORY = category_name
         INPUT_FILE_NAME = input_file_name
         INSIGHTS_FILE_NAME = file_name_insights
-        SUB_CLUSTER_NAME = None 
         PARENT_CLUSTER_NAME = None
         NUMBER_OF_SUBCLUSTERS = None
 
@@ -307,7 +290,6 @@ class RunManager:
                             CATEGORY, 
                             INPUT_FILE_NAME, 
                             INSIGHTS_FILE_NAME, 
-                            SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
@@ -365,7 +347,6 @@ class RunManager:
         CATEGORY = category_name
         INPUT_FILE_NAME = input_file_name
         INSIGHTS_FILE_NAME = file_name_insights
-        SUB_CLUSTER_NAME = None
         PARENT_CLUSTER_NAME = parent_cluster_name
         NUMBER_OF_SUBCLUSTERS = num_clusters
 
@@ -374,7 +355,6 @@ class RunManager:
                             CATEGORY, 
                             INPUT_FILE_NAME, 
                             INSIGHTS_FILE_NAME, 
-                            SUB_CLUSTER_NAME, 
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
@@ -392,22 +372,21 @@ class RunManager:
                          CATEGORY, 
                          INPUT_FILE_NAME, 
                          INSIGHTS_FILE_NAME, 
-                         SUB_CLUSTER_NAME, 
                          PARENT_CLUSTER_NAME, 
                          NUMBER_OF_SUBCLUSTERS):
         
         self.db_helper.connect()
 
         insert_query = """
-    INSERT INTO run_log (RUN_NAME, SUB_CLUSTER_NAME, NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
+    INSERT INTO run_log (RUN_NAME,  NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS, CATEGORY, INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
                             CONTAINER_NAME,ACCOUNT_NAME)
-    VALUES (%s,%s, %s, %s, %s, %s, %s, %s,%s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s,%s, %s)
     """
         
         insert_query = self.query_helper(insert_query)
 
-        data = (run_name, SUB_CLUSTER_NAME, NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
+        data = (run_name,  NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS, CATEGORY, 
                             INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
                             self.azure_blob_container,
