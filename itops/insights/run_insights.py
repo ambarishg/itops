@@ -1,9 +1,6 @@
 from itops.storage.azure_blob.azure_blob_helper import AzureBlobHelper
 from itops.storage.azure_blob.parquet_helper import ParquetHelper
 
-
-
-
 class InsightsManager:
 
     CHUNK_SIZE = 5000

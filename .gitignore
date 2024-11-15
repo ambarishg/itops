@@ -170,5 +170,7 @@ biz/tests_biz/*.csv
 biz/tests_biz/*.db
 biz/tests_biz/*.csv
 biz/tests_biz/*.duckdb
+*.db
+*.duckdb
 
 
