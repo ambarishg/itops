@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 from itops.runmanager.runmamanger import RunManager
 from itops.insights.run_insights import InsightsManager
 from itops.llm.azureopenaimanager.azure_open_ai_helper import \
@@ -5,7 +8,7 @@ AzureOpenAIManager
 from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
 from itops.db.sqlite.sqlitehelper import SQLiteDatabaseHelper
-from biz.config.configs import CONFIGS
+from config.configs import CONFIGS
 
 class BizRunManager:
         def __init__(self,
@@ -123,6 +126,13 @@ class BizRunManager:
                     description_column_name=description_column_name,
                     prompt = prompt
               ))
+        
+        def get_cluster_counts(self,
+                               run_name):
+               clusters = self.insights_manager.get_cluster_counts(run_name,None)
+        
+               clusters_json = clusters.to_json()
+               return(clusters_json)
                
      
           

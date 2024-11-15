@@ -9,3 +9,6 @@ sentence-transformers
 scikit-learn
 duckdb
 pyarrow
+fastapi
+fastapi-cors
+uvicorn
