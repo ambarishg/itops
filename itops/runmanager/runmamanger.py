@@ -24,8 +24,6 @@ class RunManager:
         
         self.db_type = db_type
 
-  
-
         self.set_storage_helpers(azure_blob_account, 
                                  azure_blob_container, 
                                  azure_storage_key)
