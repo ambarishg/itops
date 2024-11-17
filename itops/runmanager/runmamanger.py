@@ -197,8 +197,6 @@ class RunManager:
         self.db_helper.connect()
         records = self.db_helper.fetch_all(select_query,[category_to_search,parent_run_name])
         self.db_helper.close_connection()
-
-        print(records)
         azure_blob_helper01 = AzureBlobHelper(records[0][2],
                                               self.azure_blob_storage_key,
                                     records[0][1])
@@ -328,7 +326,7 @@ class RunManager:
         df = df_dropped
 
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
-        print(df_clusters)
+
 
         cluster_names = df_clusters['CLUSTER_NAMES'].unique()
 
@@ -364,7 +362,7 @@ class RunManager:
                                      INPUT_FILE_NAME=INPUT_FILE_NAME,
                                      INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
                                      CLUSTER_NAME= cluster_name,
-                                     PARENT_CLUSTER_NAME=None)
+                                     PARENT_CLUSTER_NAME=PARENT_CLUSTER_NAME)
 
     def insert_run_log(self, 
                        run_name, 
@@ -442,3 +440,36 @@ class RunManager:
             query = query.replace('%s', '?')
         
         return(query)
+    
+    def get_records(self,query):
+               
+        select_query = self.query_helper(query)
+
+        print(select_query)
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,)
+        self.db_helper.close_connection()
+        
+        return records
+    
+    def get_run_for_drilling_into_subcluster(self,
+                                             cluster_name):
+        # Fetch and display all records to verify insertion
+        select_query = 'SELECT RUN_NAME FROM cluster_data \
+              WHERE PARENT_CLUSTER_NAME = %s '
+        
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+        category_to_search = cluster_name
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
+
+        if records:
+            print(records[0][0])
+            return records[0][0]
+        else:
+            return None

@@ -124,6 +124,8 @@ class InsightsManager:
 
         if df is None:
             return None
+        
+        df = df[df["CLUSTER_NAMES"] == cluster_name ]
 
         text_all = self.get_all_text(df,
                             description_column_name)
@@ -133,6 +135,8 @@ class InsightsManager:
             text = text_all,
             user_input = prompt
         )
+
+        print(reply)
 
         return reply
 

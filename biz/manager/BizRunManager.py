@@ -9,6 +9,7 @@ from itops.db.mysql.mysqlhelper import MySQLHelper
 from itops.db.duckdb.duckdbhelper import DuckDBDatabaseHelper
 from itops.db.sqlite.sqlitehelper import SQLiteDatabaseHelper
 from config.configs import CONFIGS
+import pandas as pd
 
 class BizRunManager:
         def __init__(self,
@@ -130,9 +131,28 @@ class BizRunManager:
         def get_cluster_counts(self,
                                run_name):
                clusters = self.insights_manager.get_cluster_counts(run_name,None)
-        
-               clusters_json = clusters.to_json()
-               return(clusters_json)
+   
+               clusters_df = pd.DataFrame(clusters)
+               return(clusters_df.reset_index().to_dict(orient="records"))
+
+        def get_run_names(self):
+              select_query = """
+              SELECT DISTINCT(RUN_NAME)
+              FROM RUN_LOG 
+              """
+
+              records = self.run_manager.get_records(select_query)
+            
+              records_list = []
+              for record in records:
+                    records_list.append(record[0])
+              
+              return(records_list)
+              
+        def get_run_for_drilling_into_subcluster(self,
+                                                cluster_name):
+            
+            return(self.run_manager.get_run_for_drilling_into_subcluster(cluster_name))
                
      
           

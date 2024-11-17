@@ -1,10 +1,21 @@
 # app/main.py
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+
 from biz.manager.BizRunManager import BizRunManager
+from api.request_response_model import *
 
 app = FastAPI()
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 description_column_name = "Text"
 MODEL_NAME = "all-MiniLM-L6-v2"
@@ -16,33 +27,6 @@ biz_run_manager = BizRunManager(
     db_type="SQLITE"  # or "MYSQL", "DUCKDB"
 )
 
-# Define request models for input validation
-class RunClusterRequest(BaseModel):
-    run_name: str
-    category_name: str
-    input_file_name: str
-    num_clusters: int
-
-class RerunClusterRequest(BaseModel):
-    run_name: str
-    category_name: str
-    num_clusters: int
-
-class RerunSubClusterRequest(BaseModel):
-    run_name: str
-    parent_run_name: str
-    parent_cluster_name: str
-    category_name: str
-    num_clusters: int
-
-class InsightsRequest(BaseModel):
-    run_name: str
-    cluster_name: str
-    description_column_name: str
-
-# Define a Pydantic model for incoming requests
-class RunNameRequest(BaseModel):
-    run_name: str
 
 @app.post("/run-cluster")
 async def run_cluster(request: RunClusterRequest):
@@ -99,9 +83,9 @@ async def get_insights_solutions(request: InsightsRequest):
 async def get_insights_challenges(request: InsightsRequest):
     try:
         challenges = biz_run_manager.get_insights_challenges(
-            run_name=request.run_name,
-            cluster_name=request.cluster.name,
-            description_column=request.description_column,
+             run_name=request.run_name,
+            cluster_name=request.cluster_name,
+            description_column_name=request.description_column_name,
         )
         return {"challenges": challenges}
     except Exception as e:
@@ -110,6 +94,16 @@ async def get_insights_challenges(request: InsightsRequest):
 @app.post("/cluster-counts/")
 async def read_cluster_counts(request: RunNameRequest):
     return biz_run_manager.get_cluster_counts(request.run_name)
+
+@app.post("/get-run-names/")
+async def read_run_names():
+    return biz_run_manager.get_run_names()
+
+@app.post("/get-run-name-for-drill-down/")
+async def read_run_names(request: ClusterNameRequest):
+    response = biz_run_manager.get_run_for_drilling_into_subcluster(request.cluster_name)
+
+    return({"run_name": response})
 
 # Run the FastAPI application with Uvicorn server (if running this file directly)
 if __name__ == "__main__":
