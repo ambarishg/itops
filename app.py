@@ -117,6 +117,13 @@ async def read_run_names_for_category(request :CategoryNameRequest):
 async def read_parent_cluster_names(request :CategoryAndRunNameRequest):
     return(biz_run_manager.get_parent_cluster_name
            (request.category_name,request.run_name))
+
+@app.post("/run-clusters-from-category/")
+async def run_clusters_from_category(request :RerunClusterRequest):
+    return(biz_run_manager.run_cluster_from_category(request.run_name,
+                                                     request.category_name,
+                                                     request.num_clusters))
+           
     
 # Run the FastAPI application with Uvicorn server (if running this file directly)
 if __name__ == "__main__":
