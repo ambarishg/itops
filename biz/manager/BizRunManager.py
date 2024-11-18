@@ -153,6 +153,33 @@ class BizRunManager:
                                                 cluster_name):
             
             return(self.run_manager.get_run_for_drilling_into_subcluster(cluster_name))
+        
+        def get_category_names(self):
+              select_query = """
+              SELECT DISTINCT(CATEGORY)
+              FROM RUN_LOG 
+              """
+
+              records = self.run_manager.get_records(select_query)
+            
+              records_list = []
+              for record in records:
+                    records_list.append(record[0])
+              return(records_list)
+        
+        
+        def get_run_names_for_category(self,category_name):
+              
+              records=self.run_manager.get_run_names_for_category(category_name)
+              
+              if records is None:
+                    return None
+              records_list = []
+              for record in records:
+                    records_list.append(record[0])
+              
+              return(records_list)
+              
                
      
           

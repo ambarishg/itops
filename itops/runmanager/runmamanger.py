@@ -473,3 +473,22 @@ class RunManager:
             return records[0][0]
         else:
             return None
+    
+    def get_run_names_for_category(self,category_name):
+        select_query = 'SELECT DISTINCT(RUN_NAME) FROM cluster_data \
+              WHERE CATEGORY = %s '
+        
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+        category_to_search = category_name
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
+
+        if records:
+            return records
+        else:
+            return None
+    

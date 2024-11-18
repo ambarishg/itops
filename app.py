@@ -99,11 +99,20 @@ async def read_cluster_counts(request: RunNameRequest):
 async def read_run_names():
     return biz_run_manager.get_run_names()
 
+@app.post("/get-category-names/")
+async def read_category_names():
+    return biz_run_manager.get_category_names()
+
 @app.post("/get-run-name-for-drill-down/")
 async def read_run_names(request: ClusterNameRequest):
     response = biz_run_manager.get_run_for_drilling_into_subcluster(request.cluster_name)
 
     return({"run_name": response})
+
+@app.post("/get-run-names-for-category/")
+async def read_run_names_for_category(request :CategoryNameRequest):
+    return(biz_run_manager.get_run_names_for_category(request.category_name))
+    
 
 # Run the FastAPI application with Uvicorn server (if running this file directly)
 if __name__ == "__main__":
