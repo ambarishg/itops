@@ -157,7 +157,7 @@ class BizRunManager:
         def get_category_names(self):
               select_query = """
               SELECT DISTINCT(CATEGORY)
-              FROM RUN_LOG 
+              FROM CATEGORY_DATA 
               """
 
               records = self.run_manager.get_records(select_query)
@@ -194,6 +194,19 @@ class BizRunManager:
                     records_list.append(record[0])
               
               return(records_list)
+        
+        def run_cluster_from_category(self,
+                    run_name,
+                    category_name,
+                    num_clusters):
+              
+              file_name = self.run_manager.get_file_name_from_category(category_name)
+
+              self.run_cluster(run_name,
+                               category_name,
+                               file_name,
+                               num_clusters)
+
                
      
           

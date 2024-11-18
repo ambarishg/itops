@@ -512,4 +512,22 @@ class RunManager:
         records = self.db_helper.fetch_all(select_query,
                     [category_name,run_name])
         return(records)
+    
+    def get_file_name_from_category(self,category_name):
+
+        select_query ="""
+
+            SELECT INPUT_FILE_NAME
+            FROM category_data
+            WHERE CATEGORY = %s 
+
+            """
         
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,
+                    [category_name])
+        return(records[0][0])
