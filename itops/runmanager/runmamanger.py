@@ -491,4 +491,25 @@ class RunManager:
             return records
         else:
             return None
-    
+        
+    def get_parent_cluster_name(self,category_name,
+                                run_name):
+        
+        select_query ="""
+
+            SELECT DISTINCT(CLUSTER_NAME)
+            FROM cluster_data
+            WHERE CATEGORY = %s \
+            AND RUN_NAME = %s 
+
+            """
+        
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,
+                    [category_name,run_name])
+        return(records)
+        

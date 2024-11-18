@@ -179,7 +179,21 @@ class BizRunManager:
                     records_list.append(record[0])
               
               return(records_list)
+        
+        def get_parent_cluster_name(self,category_name,
+                                run_name):
               
+              records=self.run_manager.get_parent_cluster_name(
+                    category_name,
+                    run_name)
+              
+              if records is None:
+                    return None
+              records_list = []
+              for record in records:
+                    records_list.append(record[0])
+              
+              return(records_list)
                
      
           
