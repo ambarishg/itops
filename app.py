@@ -37,7 +37,7 @@ async def run_cluster(request: RunClusterRequest):
             input_file_name=request.input_file_name,
             num_clusters=request.num_clusters,
         )
-        return {"message": "Cluster run initiated successfully."}
+        return {"message": "Cluster run completed successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -49,7 +49,7 @@ async def rerun_cluster(request: RerunClusterRequest):
             category_name=request.category_name,
             num_clusters=request.num_clusters,
         )
-        return {"message": "Cluster rerun initiated successfully."}
+        return {"message": "Cluster rerun completed successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,7 +63,7 @@ async def rerun_sub_cluster(request: RerunSubClusterRequest):
             parent_cluster_name=request.parent_cluster_name,
             parent_run_name=request.parent_run_name,
         )
-        return {"message": "Sub-cluster rerun initiated successfully."}
+        return {"message": "Sub-cluster rerun completed successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -113,7 +113,11 @@ async def read_run_names(request: ClusterNameRequest):
 async def read_run_names_for_category(request :CategoryNameRequest):
     return(biz_run_manager.get_run_names_for_category(request.category_name))
     
-
+@app.post("/get-parent-cluster-names/")
+async def read_parent_cluster_names(request :CategoryAndRunNameRequest):
+    return(biz_run_manager.get_parent_cluster_name
+           (request.category_name,request.run_name))
+    
 # Run the FastAPI application with Uvicorn server (if running this file directly)
 if __name__ == "__main__":
     import uvicorn

@@ -33,3 +33,7 @@ class ClusterNameRequest(BaseModel):
 
 class CategoryNameRequest(BaseModel):
     category_name:str
+
+class CategoryAndRunNameRequest(BaseModel):
+    category_name:str
+    run_name: str
