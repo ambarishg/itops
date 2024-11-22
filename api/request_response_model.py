@@ -37,3 +37,9 @@ class CategoryNameRequest(BaseModel):
 class CategoryAndRunNameRequest(BaseModel):
     category_name:str
     run_name: str
+
+class UploadRequest(BaseModel):
+    category: str 
+    description: str 
+    challenge: str 
+    solution: str 
