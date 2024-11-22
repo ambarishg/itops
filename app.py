@@ -1,6 +1,6 @@
 # app/main.py
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,UploadFile, File,UploadFile, Form
 
 from biz.manager.BizRunManager import BizRunManager
 from api.request_response_model import *
@@ -124,7 +124,19 @@ async def run_clusters_from_category(request :RerunClusterRequest):
                                                      request.category_name,
                                                      request.num_clusters))
            
+@app.post("/upload_docs/")
+async def upload_docs(
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    description: str = Form(...),
+    challenge: str = Form(...),
+    solution: str = Form(...)
+):
     
+    print(category,challenge,solution,description,file.filename)
+   
+
+
 # Run the FastAPI application with Uvicorn server (if running this file directly)
 if __name__ == "__main__":
     import uvicorn

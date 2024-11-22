@@ -384,11 +384,13 @@ class RunManager:
         
         insert_query = self.query_helper(insert_query)
 
-        data = (run_name,  NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
-                            NUMBER_OF_SUBCLUSTERS, CATEGORY, 
-                            INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
-                            self.azure_blob_container,
-                            self.azure_blob_account)
+        data = (run_name,  
+                NUMBER_OF_CLUSTERS, 
+                PARENT_CLUSTER_NAME,
+                NUMBER_OF_SUBCLUSTERS, CATEGORY, 
+                INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
+                self.azure_blob_container,
+                self.azure_blob_account)
         
         self.db_helper.execute_query(insert_query, data)
         self.db_helper.close_connection()
