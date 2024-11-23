@@ -102,7 +102,9 @@ class BizRunManager:
                     parent_cluster_name,
                     parent_run_name)
                
-        def get_insights_solutions(self,run_name,cluster_name,
+        def get_insights_solutions(self,run_name,
+                                   category_name,
+                                   cluster_name,
                      description_column_name): 
               
               prompt = """
@@ -111,11 +113,14 @@ class BizRunManager:
               return(self.insights_manager.get_insights_specific_attr(
                     run_name=run_name,
                     cluster_name=cluster_name,
+                    category_name = category_name,
                     description_column_name=description_column_name,
                     prompt = prompt
               ))
         
-        def get_insights_challenges(self,run_name,cluster_name,
+        def get_insights_challenges(self,run_name,
+                                    category_name,
+                                    cluster_name,
                      description_column_name): 
               
               prompt = """
@@ -124,13 +129,16 @@ class BizRunManager:
               return(self.insights_manager.get_insights_specific_attr(
                     run_name=run_name,
                     cluster_name=cluster_name,
+                    category_name  = category_name,
                     description_column_name=description_column_name,
                     prompt = prompt
               ))
         
         def get_cluster_counts(self,
-                               run_name):
-               clusters = self.insights_manager.get_cluster_counts(run_name,None)
+                               run_name,category_name):
+               clusters = self.insights_manager.get_cluster_counts(run_name,
+                                                                   category_name,
+                                                                   None)
    
                clusters_df = pd.DataFrame(clusters)
                return(clusters_df.reset_index().to_dict(orient="records"))
@@ -206,6 +214,26 @@ class BizRunManager:
                                category_name,
                                file_name,
                                num_clusters)
+        
+        def insert_category_info(
+            self,
+            file_data,
+            file_name:str,
+            category: str ,
+            description: str ,
+            challenge: str ,
+            solution: str 
+    ):
+              return(
+                    self.run_manager.insert_category_info(
+                        file_data,
+                        file_name,
+                        category ,
+                        description ,
+                        challenge ,
+                        solution
+                        )
+              )
 
                
      

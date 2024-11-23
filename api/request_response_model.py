@@ -22,6 +22,7 @@ class RerunSubClusterRequest(BaseModel):
 class InsightsRequest(BaseModel):
     run_name: str
     cluster_name: str
+    category_name:str
     description_column_name: str
 
 # Define a Pydantic model for incoming requests

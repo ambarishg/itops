@@ -73,6 +73,7 @@ async def get_insights_solutions(request: InsightsRequest):
         solutions = biz_run_manager.get_insights_solutions(
             run_name=request.run_name,
             cluster_name=request.cluster_name,
+            category_name = request.category_name,
             description_column_name=request.description_column_name,
         )
         return {"solutions": solutions}
@@ -85,6 +86,7 @@ async def get_insights_challenges(request: InsightsRequest):
         challenges = biz_run_manager.get_insights_challenges(
              run_name=request.run_name,
             cluster_name=request.cluster_name,
+            category_name = request.category_name,
             description_column_name=request.description_column_name,
         )
         return {"challenges": challenges}
@@ -92,8 +94,9 @@ async def get_insights_challenges(request: InsightsRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/cluster-counts/")
-async def read_cluster_counts(request: RunNameRequest):
-    return biz_run_manager.get_cluster_counts(request.run_name)
+async def read_cluster_counts(request: CategoryAndRunNameRequest):
+    return biz_run_manager.get_cluster_counts(request.run_name,
+                                              request.category_name)
 
 @app.post("/get-run-names/")
 async def read_run_names():
@@ -133,7 +136,14 @@ async def upload_docs(
     solution: str = Form(...)
 ):
     
-    print(category,challenge,solution,description,file.filename)
+    return(biz_run_manager.insert_category_info(
+        file.file,
+        file.filename,
+        category,
+        description,
+        challenge,
+        solution
+    ))
    
 
 

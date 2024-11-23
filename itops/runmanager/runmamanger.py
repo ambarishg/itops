@@ -455,6 +455,7 @@ class RunManager:
         
         return records
     
+    
     def get_run_for_drilling_into_subcluster(self,
                                              cluster_name):
         # Fetch and display all records to verify insertion
@@ -533,3 +534,83 @@ class RunManager:
         records = self.db_helper.fetch_all(select_query,
                     [category_name])
         return(records[0][0])
+    
+    def insert_category_data(self,CATEGORY , 
+                    INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL ):
+        # Establish a connection to the database
+        self.db_helper.connect()
+        print("CONNECTED to the database")
+
+        print(f"Category Data : {CATEGORY}")
+        print(f"INPUT_FILE_NAME Data : {INPUT_FILE_NAME}")
+        print(f"DESCRIPTION_COL Data : {DESCRIPTION_COL}")
+        print(f"CHALLENGE_COL Data : {CHALLENGE_COL}")
+        print(f"SOLUTION_COL Data : {SOLUTION_COL}")
+              
+
+        # Define the insert query
+        insert_query = """
+        INSERT INTO  category_data (
+                    CATEGORY , 
+                    INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL 
+                    )
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        insert_query = self.query_helper(insert_query)
+        print(insert_query)
+        
+        # Prepare the data tuple
+        data = (CATEGORY , 
+                    INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL )
+
+        try:
+            # Execute the insert query with the provided data
+            self.db_helper.execute_query(insert_query, data)
+            print("Data inserted successfully.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise Exception(e)
+        finally:
+            # Ensure the database connection is closed
+            self.db_helper.close_connection()
+    
+    def insert_category_info(
+            self,
+            file_data,
+            file_name:str,
+            category: str ,
+            description: str ,
+            challenge: str ,
+            solution: str 
+    ):
+        
+        self.azure_blob_helper.upload_blob(
+            file_data,
+            file_name
+        )
+
+        print(f"{file_name} has been successfully uploaded")
+
+        self.insert_category_data(CATEGORY = category, 
+                    INPUT_FILE_NAME = file_name , 
+                    DESCRIPTION_COL = description, 
+                    CHALLENGE_COL = challenge , 
+                    SOLUTION_COL = solution )
+        
+        print(f"{file_name} has been successfully updated \
+              in the Category Log")
+
+        return True
+    
+    
+

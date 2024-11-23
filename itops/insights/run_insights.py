@@ -22,6 +22,7 @@ class InsightsManager:
         
     def get_input_filename(self,
                            run_name,
+                           category_name,
                            cluster_name = None):
         
         if cluster_name:
@@ -29,12 +30,14 @@ class InsightsManager:
             INSIGHTS_FILE_NAME \
             FROM cluster_data \
             WHERE RUN_NAME = %s \
+            AND CATEGORY = %s \
             AND CLUSTER_NAME = %s'
         else:
             select_query = 'SELECT \
             INSIGHTS_FILE_NAME \
             FROM cluster_data \
-            WHERE RUN_NAME = %s'
+            WHERE RUN_NAME = %s \
+            AND CATEGORY = %s '
         
         select_query = self.query_helper(select_query)
 
@@ -44,10 +47,10 @@ class InsightsManager:
 
         if cluster_name:
             records = self.db_helper.fetch_all(select_query,
-                [run_name,cluster_name])
+                [run_name,category_name,cluster_name])
         else:
              records = self.db_helper.fetch_all(select_query,
-                [run_name])
+                [run_name,category_name])
              
         self.db_helper.close_connection()
 
@@ -114,12 +117,12 @@ class InsightsManager:
 
         return(reply_all)
 
-    def get_insights_specific_attr(self,run_name,cluster_name,
+    def get_insights_specific_attr(self,run_name,category_name,cluster_name,
                      description_column_name,
                      prompt):
 
         df = self.get_input_filename(
-            run_name,cluster_name
+            run_name,category_name,cluster_name
         )
 
         if df is None:
@@ -127,8 +130,22 @@ class InsightsManager:
         
         df = df[df["CLUSTER_NAMES"] == cluster_name ]
 
-        text_all = self.get_all_text(df,
-                            description_column_name)
+        input_file_name, \
+        description_column_name_ticket, \
+            challenge_col, \
+                solution_col = self.get_category_data(category_name=category_name)
+        
+        print(input_file_name, \
+        description_column_name_ticket, \
+            challenge_col, \
+                solution_col)
+
+        if description_column_name == "Challenge":
+            text_all = self.get_all_text(df,
+                                challenge_col)
+        elif description_column_name == "Solution":
+            text_all = self.get_all_text(df,
+                                solution_col)
 
        
         reply = self.get_consolidated_response(
@@ -151,10 +168,37 @@ class InsightsManager:
         file_helper01 = ParquetHelper(azure_blob_helper01)
         return file_helper01
 
-    def get_cluster_counts(self,run_name,cluster_name):
+    def get_cluster_counts(self,run_name,category_name,cluster_name):
          
          df = self.get_input_filename(
-            run_name,cluster_name
+            run_name,category_name,cluster_name
          )
          
          return (df["CLUSTER_NAMES"].value_counts())
+    
+    def get_category_data(self,category_name):
+        select_query = """
+              SELECT INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL  
+              FROM 
+              category_data
+              WHERE CATEGORY = %s 
+              """
+        
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+        category_to_search = category_name
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
+
+        if records:
+            return(records[0][0],
+                   records[0][1],
+                   records[0][2],
+                   records[0][3],
+                   )
