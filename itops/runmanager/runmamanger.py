@@ -12,7 +12,7 @@ import os
 class RunManager:
 
     def __init__(self,
-                 description_column_name,
+                 category_name,
                  embedding_model_name,
                  azure_open_ai_helper,
                  azure_blob_account,
@@ -23,8 +23,7 @@ class RunManager:
                  ):
         
         self.db_type = db_type
-
-  
+        
 
         self.set_storage_helpers(azure_blob_account, 
                                  azure_blob_container, 
@@ -32,9 +31,18 @@ class RunManager:
 
         self.azure_open_ai_helper= azure_open_ai_helper
         self.db_helper = db_helper
-        self.description_column_name = description_column_name
+        
         self.embedding_model_name = embedding_model_name
         self.generator = EmbeddingGenerator(self.embedding_model_name)
+
+        if category_name:
+
+            input_file_name, \
+            description_column_name_ticket, \
+                challenge_col, \
+                    solution_col = self.get_category_data(category_name=category_name) 
+            
+            self.description_column_name = description_column_name_ticket
 
     def set_storage_helpers(self, 
                             azure_blob_account, 
@@ -309,60 +317,77 @@ class RunManager:
                     parent_cluster_name,
                     parent_run_name):
         
-        df,input_file_name = self.get_input_filename_for_rerun_subcluster(category_name,
-                                                                          parent_run_name)
-        if df is None:
-            print("No Valid Entries for RERUN SUBCLUSTER")
-            return
-        
-        
-        df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
-        
+        try:
+            
+            df,input_file_name = self.get_input_filename_for_rerun_subcluster(category_name,
+                                                                            parent_run_name)
+            if df is None:
+                print("No Valid Entries for RERUN SUBCLUSTER")
+                return
+            
+            
+            df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
+            
 
-        df_dropped = df_parent_cluster
-        df_dropped = df_dropped.drop('CLUSTERS', axis=1)
-        df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
- 
-        df = df_dropped
+            df_dropped = df_parent_cluster
+            df_dropped = df_dropped.drop('CLUSTERS', axis=1)
+            df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
+    
+            df = df_dropped
 
-        df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
+            df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
 
-        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+            cluster_names = df_clusters['CLUSTER_NAMES'].unique()
 
-        file_name_insights = input_file_name.split(".")[0] + \
-            "-"+ \
-                run_name + \
-                        ".parquet"
-        
-        df_clusters.to_parquet(file_name_insights,index = False)
+            file_name_insights = input_file_name.split(".")[0] + \
+                "-"+ \
+                    run_name + \
+                            ".parquet"
+            
+            df_clusters.to_parquet(file_name_insights,index = False)
 
-        self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
+            self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
 
-        os.remove(file_name_insights)
+            os.remove(file_name_insights)
 
-        NUMBER_OF_CLUSTERS = None
-        CATEGORY = category_name
-        INPUT_FILE_NAME = input_file_name
-        INSIGHTS_FILE_NAME = file_name_insights
-        PARENT_CLUSTER_NAME = parent_cluster_name
-        NUMBER_OF_SUBCLUSTERS = num_clusters
+            NUMBER_OF_CLUSTERS = None
+            CATEGORY = category_name
+            INPUT_FILE_NAME = input_file_name
+            INSIGHTS_FILE_NAME = file_name_insights
+            PARENT_CLUSTER_NAME = parent_cluster_name
+            NUMBER_OF_SUBCLUSTERS = num_clusters
 
-        self.insert_run_log(run_name, 
-                            NUMBER_OF_CLUSTERS, 
-                            CATEGORY, 
-                            INPUT_FILE_NAME, 
-                            INSIGHTS_FILE_NAME, 
-                            PARENT_CLUSTER_NAME,
-                            NUMBER_OF_SUBCLUSTERS)
-        
-        for cluster_name in cluster_names:
-            self.insert_cluster_data(RUN_NAME=run_name,
-                                     CATEGORY=CATEGORY,
-                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
-                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
-                                     CLUSTER_NAME= cluster_name,
-                                     PARENT_CLUSTER_NAME=PARENT_CLUSTER_NAME)
+            print(f"run_name = {run_name}")
+            print(f"NUMBER_OF_CLUSTERS = {NUMBER_OF_CLUSTERS}")
+            print(f"CATEGORY = {CATEGORY}")
+            print(f"INPUT_FILE_NAME = {INPUT_FILE_NAME}")
+            print(f"INSIGHTS_FILE_NAME = {INSIGHTS_FILE_NAME}")
+            print(f"PARENT_CLUSTER_NAME = {PARENT_CLUSTER_NAME}")
+            print(f"NUMBER_OF_SUBCLUSTERS = {NUMBER_OF_SUBCLUSTERS}")
+
+            self.insert_run_log(run_name, 
+                                NUMBER_OF_CLUSTERS, 
+                                CATEGORY, 
+                                INPUT_FILE_NAME, 
+                                INSIGHTS_FILE_NAME, 
+                                PARENT_CLUSTER_NAME,
+                                NUMBER_OF_SUBCLUSTERS)
+            
+            for cluster_name in cluster_names:
+                self.insert_cluster_data(RUN_NAME=run_name,
+                                        CATEGORY=CATEGORY,
+                                        INPUT_FILE_NAME=INPUT_FILE_NAME,
+                                        INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                                        CLUSTER_NAME= cluster_name,
+                                        PARENT_CLUSTER_NAME=PARENT_CLUSTER_NAME)
+            
+            message = "Sub Cluster has been successfully completed"
+        except Exception as e:
+            message = f"An error occurred: {e}"
+            print(message)            
+        finally:
+            return message
 
     def insert_run_log(self, 
                        run_name, 
@@ -392,8 +417,16 @@ class RunManager:
                 self.azure_blob_container,
                 self.azure_blob_account)
         
-        self.db_helper.execute_query(insert_query, data)
-        self.db_helper.close_connection()
+        try:
+            # Execute the insert query with the provided data
+            self.db_helper.execute_query(insert_query, data)
+            print("Data inserted successfully.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise Exception(e)
+        finally:
+            # Ensure the database connection is closed
+            self.db_helper.close_connection()
 
     def insert_cluster_data(self,RUN_NAME, 
                          CATEGORY, 
@@ -432,6 +465,7 @@ class RunManager:
             print("Data inserted successfully.")
         except Exception as e:
             print(f"An error occurred: {e}")
+            raise Exception(e)
         finally:
             # Ensure the database connection is closed
             self.db_helper.close_connection()
@@ -612,5 +646,34 @@ class RunManager:
 
         return True
     
+    def get_category_data(self,category_name):
+        select_query = """
+              SELECT INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL  
+              FROM 
+              category_data
+              WHERE CATEGORY = %s 
+              """
+        
+        select_query = self.query_helper(select_query)
+
+        print(select_query)
+        category_to_search = category_name
+
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
+
+        if records:
+            return(records[0][0],
+                   records[0][1],
+                   records[0][2],
+                   records[0][3],
+                   )
+        else:
+            return(None,None,None,None)
+
     
 
