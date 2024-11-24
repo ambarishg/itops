@@ -139,11 +139,21 @@ class InsightsManager:
         description_column_name_ticket, \
             challenge_col, \
                 solution_col)
+        
+        if challenge_col is None:
+            challenge_col = ""
+        if solution_col is None:
+            solution_col = ""
 
         if description_column_name == "Challenge":
+            if (challenge_col == "" ):
+                return ""
+            
             text_all = self.get_all_text(df,
                                 challenge_col)
         elif description_column_name == "Solution":
+            if (solution_col == "" ):
+                return ""
             text_all = self.get_all_text(df,
                                 solution_col)
 
