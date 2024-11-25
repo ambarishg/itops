@@ -1,11 +1,17 @@
 # app/main.py
 
-from fastapi import FastAPI, HTTPException,UploadFile, File,UploadFile, Form
+from fastapi import FastAPI, Request,HTTPException,UploadFile, File,UploadFile, Form
 
 from biz.manager.BizRunManager import BizRunManager
 from api.request_response_model import *
+from security.clerk.ClerkProviderHelper import ClerkProviderHelper
+
 
 app = FastAPI()
+
+JWKS_URL = "https://witty-collie-34.clerk.accounts.dev/.well-known/jwks.json"
+clerk_helper = ClerkProviderHelper(JWKS_URL)
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,39 +28,49 @@ MODEL_NAME = "all-MiniLM-L6-v2"
 
 
 @app.post("/run-cluster")
-async def run_cluster(request: RunClusterRequest):
-    try:
-        biz_run_manager = BizRunManager(
-    category_name=request.category_name,
-    embedding_model_name=MODEL_NAME,
-    db_type="SQLITE"  # or "MYSQL", "DUCKDB"
-)
-        biz_run_manager.run_cluster(
-            run_name=request.run_name,
-            category_name=request.category_name,
-            input_file_name=request.input_file_name,
-            num_clusters=request.num_clusters,
-        )
-        return {"message": "Cluster run completed successfully."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def run_cluster(request: RunClusterRequest,
+                      request_token: Request):
+    
+    username = await clerk_helper.get_user_name(request_token)
+    
+    if username:
+        try:
+            biz_run_manager = BizRunManager(
+        category_name=request.category_name,
+        embedding_model_name=MODEL_NAME,
+        db_type="SQLITE"  # or "MYSQL", "DUCKDB"
+    )
+            biz_run_manager.run_cluster(
+                run_name=request.run_name,
+                category_name=request.category_name,
+                input_file_name=request.input_file_name,
+                num_clusters=request.num_clusters,
+            )
+            return {"message": "Cluster run completed successfully."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/rerun-cluster")
-async def rerun_cluster(request: RerunClusterRequest):
-    try:
-        biz_run_manager = BizRunManager(
-    category_name=request.category_name,
-    embedding_model_name=MODEL_NAME,
-    db_type="SQLITE"  # or "MYSQL", "DUCKDB"
-)
-        biz_run_manager.rerun_cluster(
-            run_name=request.run_name,
-            category_name=request.category_name,
-            num_clusters=request.num_clusters,
-        )
-        return {"message": "Cluster rerun completed successfully."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def rerun_cluster(request: RerunClusterRequest,
+                      request_token: Request):
+    
+    username = await clerk_helper.get_user_name(request_token)
+    
+    if username:
+        try:
+            biz_run_manager = BizRunManager(
+        category_name=request.category_name,
+        embedding_model_name=MODEL_NAME,
+        db_type="SQLITE"  # or "MYSQL", "DUCKDB"
+    )
+            biz_run_manager.rerun_cluster(
+                run_name=request.run_name,
+                category_name=request.category_name,
+                num_clusters=request.num_clusters,
+            )
+            return {"message": "Cluster rerun completed successfully."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/rerun-sub-cluster")
 async def rerun_sub_cluster(request: RerunSubClusterRequest):
@@ -132,13 +148,16 @@ async def read_run_names():
     return biz_run_manager.get_run_names()
 
 @app.post("/get-category-names/")
-async def read_category_names():
-    biz_run_manager = BizRunManager(
-    category_name=None,
-    embedding_model_name=MODEL_NAME,
-    db_type="SQLITE"  # or "MYSQL", "DUCKDB"
-)
-    return biz_run_manager.get_category_names()
+async def read_category_names(request: Request):
+    username = await clerk_helper.get_user_name(request)
+    if username:
+
+        biz_run_manager = BizRunManager(
+        category_name=None,
+        embedding_model_name=MODEL_NAME,
+        db_type="SQLITE"  # or "MYSQL", "DUCKDB"
+    )
+        return biz_run_manager.get_category_names()
 
 @app.post("/get-run-name-for-drill-down/")
 async def read_run_names(request: ClusterNameRequest):
@@ -152,13 +171,18 @@ async def read_run_names(request: ClusterNameRequest):
     return({"run_name": response})
 
 @app.post("/get-run-names-for-category/")
-async def read_run_names_for_category(request :CategoryNameRequest):
-    biz_run_manager = BizRunManager(
-    category_name=request.category_name,
-    embedding_model_name=MODEL_NAME,
-    db_type="SQLITE"  # or "MYSQL", "DUCKDB"
-)
-    return(biz_run_manager.get_run_names_for_category(request.category_name))
+async def read_run_names_for_category(request :CategoryNameRequest, 
+                                      request_token: Request):
+    
+    username = await clerk_helper.get_user_name(request_token)
+    
+    if username:
+        biz_run_manager = BizRunManager(
+        category_name=request.category_name,
+        embedding_model_name=MODEL_NAME,
+        db_type="SQLITE"  # or "MYSQL", "DUCKDB"
+    )
+        return(biz_run_manager.get_run_names_for_category(request.category_name))
     
 @app.post("/get-parent-cluster-names/")
 async def read_parent_cluster_names(request :CategoryAndRunNameRequest):

@@ -13,3 +13,5 @@ fastapi
 fastapi-cors
 uvicorn
 python-multipart
+httpx 
+pyjwt
