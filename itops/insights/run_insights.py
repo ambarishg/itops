@@ -1,5 +1,6 @@
 from itops.storage.azure_blob.azure_blob_helper import AzureBlobHelper
 from itops.storage.azure_blob.parquet_helper import ParquetHelper
+import pandas as pd
 
 class InsightsManager:
 
@@ -27,16 +28,16 @@ class InsightsManager:
         
         if cluster_name:
             select_query = 'SELECT \
-            INSIGHTS_FILE_NAME \
+            INSIGHTS_FILE_NAME,CLUSTER_ID,CLUSTER_NAME \
             FROM cluster_data \
-            WHERE RUN_NAME = %s \
+            WHERE RUN_ID = %s \
             AND CATEGORY = %s \
-            AND CLUSTER_NAME = %s'
+            AND CLUSTER_ID = %s'
         else:
             select_query = 'SELECT \
-            INSIGHTS_FILE_NAME \
+            INSIGHTS_FILE_NAME,CLUSTER_ID,CLUSTER_NAME \
             FROM cluster_data \
-            WHERE RUN_NAME = %s \
+            WHERE RUN_ID = %s \
             AND CATEGORY = %s '
         
         select_query = self.query_helper(select_query)
@@ -59,6 +60,11 @@ class InsightsManager:
         if records is None:
             return records
         
+        df_records = pd.DataFrame(records,
+                                  columns = ["INSIGHTS_FILE_NAME",
+                                             "CLUSTER_ID",
+                                             "CLUSTER_NAMES"])
+        
         azure_blob_helper01 = AzureBlobHelper(account_name=self.azure_blob_account,
                                               account_key=self.azure_storage_key,
                                    container_name=self.azure_blob_container)
@@ -68,7 +74,7 @@ class InsightsManager:
         print(records[0][0])
         df = file_helper01.read_file(records[0][0]
                                    )
-       
+             
         return df
     
     def get_all_text(self,
@@ -128,7 +134,12 @@ class InsightsManager:
         if df is None:
             return None
         
-        df = df[df["CLUSTER_NAMES"] == cluster_name ]
+        print(df.columns)
+        print(cluster_name)
+        
+        df = df[df["CLUSTER_ID"] == cluster_name ]
+
+        
 
         input_file_name, \
         description_column_name_ticket, \
@@ -184,7 +195,21 @@ class InsightsManager:
             run_name,category_name,cluster_name
          )
          
-         return (df["CLUSTER_NAMES"].value_counts())
+         df_counts = df.groupby(by=["CLUSTER_ID","CLUSTER_NAMES"])["CLUSTERS"].count()
+
+        # Output is of the form
+        #   [
+        #   {
+        #     "CLUSTER_ID": "1a861341-1559-4b69-903e-6d5a88e1f377",
+        #     "CLUSTER_NAMES": "IT support and software issues.",
+        #     "CLUSTERS": 16
+        #   },
+        #   {
+        #     "CLUSTER_ID": "4de7029f-e042-482b-b9af-fe97501a9038",
+        #     "CLUSTER_NAMES": "Device requests and technical issues.",
+        #     "CLUSTERS": 19
+        #   }, ]
+         return (df_counts)
     
     def get_category_data(self,category_name):
         select_query = """
