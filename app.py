@@ -60,14 +60,19 @@ async def rerun_cluster(request: RerunClusterRequest):
 @app.post("/rerun-sub-cluster")
 async def rerun_sub_cluster(request: RerunSubClusterRequest):
     try:
-        RUN_ID = biz_run_manager.rerun_sub_cluster(
+         biz_run_manager = BizRunManager(
+    category_name=request.category_name,
+    embedding_model_name=MODEL_NAME,
+    db_type="SQLITE"  # or "MYSQL", "DUCKDB"
+)
+         RUN_ID = biz_run_manager.rerun_sub_cluster(
             run_name=request.run_name,
             category_name=request.category_name,
             num_clusters=request.num_clusters,
             parent_cluster_name=request.parent_cluster_name,
             parent_run_name=request.parent_run_name,
         )
-        return {"message": "Sub-cluster rerun completed successfully.",
+         return {"message": "Sub-cluster rerun completed successfully.",
                 "RUN_ID":RUN_ID}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
