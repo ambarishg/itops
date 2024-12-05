@@ -12,7 +12,7 @@ import os
 class RunManager:
 
     def __init__(self,
-                 description_column_name,
+                 category_name,
                  embedding_model_name,
                  azure_open_ai_helper,
                  azure_blob_account,
@@ -23,8 +23,7 @@ class RunManager:
                  ):
         
         self.db_type = db_type
-
-  
+        
 
         self.set_storage_helpers(azure_blob_account, 
                                  azure_blob_container, 
@@ -32,9 +31,18 @@ class RunManager:
 
         self.azure_open_ai_helper= azure_open_ai_helper
         self.db_helper = db_helper
-        self.description_column_name = description_column_name
+        
         self.embedding_model_name = embedding_model_name
         self.generator = EmbeddingGenerator(self.embedding_model_name)
+
+        if category_name:
+
+            input_file_name, \
+            description_column_name_ticket, \
+                challenge_col, \
+                    solution_col = self.get_category_data(category_name=category_name) 
+            
+            self.description_column_name = description_column_name_ticket
 
     def set_storage_helpers(self, 
                             azure_blob_account, 
@@ -357,7 +365,6 @@ class RunManager:
 
         df_dropped = df_parent_cluster
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
-        df_dropped = df_dropped.drop('CLUSTER_ID', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
  
         df = df_dropped
@@ -368,10 +375,10 @@ class RunManager:
         cluster_ids = df_clusters['CLUSTER_ID'].unique()
 
         file_name_insights = input_file_name.split(".")[0] + \
-            "-"+ \
-                run_name + \
-                        ".parquet"
-        
+                "-"+ \
+                    run_name + \
+                            ".parquet"
+            
         df_clusters.to_parquet(file_name_insights,index = False)
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
@@ -453,8 +460,16 @@ class RunManager:
                 self.azure_blob_container,
                 self.azure_blob_account)
         
-        self.db_helper.execute_query(insert_query, data)
-        self.db_helper.close_connection()
+        try:
+            # Execute the insert query with the provided data
+            self.db_helper.execute_query(insert_query, data)
+            print("Data inserted successfully.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise Exception(e)
+        finally:
+            # Ensure the database connection is closed
+            self.db_helper.close_connection()
 
     def insert_cluster_data(self,RUN_ID,RUN_NAME, 
                          CATEGORY, 
@@ -502,6 +517,7 @@ class RunManager:
             print("Data inserted successfully.")
         except Exception as e:
             print(f"An error occurred: {e}")
+            raise Exception(e)
         finally:
             # Ensure the database connection is closed
             self.db_helper.close_connection()

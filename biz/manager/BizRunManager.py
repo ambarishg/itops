@@ -13,7 +13,7 @@ import pandas as pd
 
 class BizRunManager:
         def __init__(self,
-                 description_column_name,
+                 category_name,
                  embedding_model_name,
                  db_type = "SQLITE",
                  ):
@@ -26,7 +26,7 @@ class BizRunManager:
                                     deployment_id=CONFIGS.AZURE_OPENAI_DEPLOYMENT_ID,
             api_version = "2024-02-01")
 
-          self.run_manager = RunManager(description_column_name,
+          self.run_manager = RunManager(category_name,
                  embedding_model_name,
                  azure_open_ai_helper= self.llm_helper,
                  azure_blob_account = CONFIGS.AZURE_BLOB_STORAGE_ACCOUNT,
