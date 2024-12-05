@@ -94,13 +94,13 @@ class BizRunManager:
                prompt_name =  "Please extract the theme \
               of the provided context in Maximum 5 words"
 
-               self.run_manager.rerun_sub_cluster(
+               return(self.run_manager.rerun_sub_cluster(
                     run_name,
                     category_name,
                     prompt_name,
                     num_clusters,
                     parent_cluster_name,
-                    parent_run_name)
+                    parent_run_name))
                
         def get_insights_solutions(self,run_name,
                                    category_name,
@@ -141,21 +141,18 @@ class BizRunManager:
                                                                    None)
    
                clusters_df = pd.DataFrame(clusters)
+               clusters_df = clusters_df.sort_values(by="CLUSTERS",ascending= False)
                return(clusters_df.reset_index().to_dict(orient="records"))
 
         def get_run_names(self):
               select_query = """
-              SELECT DISTINCT(RUN_NAME)
+              SELECT RUN_ID,RUN_NAME
               FROM RUN_LOG 
               """
 
               records = self.run_manager.get_records(select_query)
             
-              records_list = []
-              for record in records:
-                    records_list.append(record[0])
-              
-              return(records_list)
+              return(records)
               
         def get_run_for_drilling_into_subcluster(self,
                                                 cluster_name):
@@ -182,11 +179,8 @@ class BizRunManager:
               
               if records is None:
                     return None
-              records_list = []
-              for record in records:
-                    records_list.append(record[0])
               
-              return(records_list)
+              return(records)
         
         def get_parent_cluster_name(self,category_name,
                                 run_name):

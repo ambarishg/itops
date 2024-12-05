@@ -126,11 +126,14 @@ class RunManager:
             print(f"Completed CLUSTERING PART 1 {i+1} ROW")
 
         cluster_number_list= []
+        cluster_id_list = []
         for i in range(len(cluster_name_list)):
             cluster_number_list.append(i)
+            cluster_id_list.append(self.get_guid())
         df_clusters = pd.DataFrame()
         df_clusters["CLUSTERS"] = cluster_number_list
         df_clusters["CLUSTER_NAMES"] = cluster_name_list
+        df_clusters["CLUSTER_ID"] = cluster_id_list
 
         df_all = df.merge(df_clusters,)
         print(f"Completed CLUSTERING FINAL")
@@ -154,7 +157,8 @@ class RunManager:
         
         df_clusters.to_parquet(file_name_insights,index = False)
 
-        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+        cluster_ids = df_clusters['CLUSTER_ID'].unique()
+
 
         self.azure_blob_helper.upload_blob_from_path(file_name_insights,file_name_insights)
 
@@ -166,8 +170,10 @@ class RunManager:
         INSIGHTS_FILE_NAME = file_name_insights
         PARENT_CLUSTER_NAME = None
         NUMBER_OF_SUBCLUSTERS = None
+        RUN_ID =  self.get_guid()
 
-        self.insert_run_log(run_name, 
+        self.insert_run_log(RUN_ID,
+                            run_name, 
                             NUMBER_OF_CLUSTERS, 
                             CATEGORY, 
                             INPUT_FILE_NAME, 
@@ -175,19 +181,35 @@ class RunManager:
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
-        for cluster_name in cluster_names:
-            self.insert_cluster_data(RUN_NAME=run_name,
-                                     CATEGORY=CATEGORY,
-                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
-                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
-                                     CLUSTER_NAME= cluster_name,
-                                     PARENT_CLUSTER_NAME=None)
+        for cluster_id in cluster_ids:
+            CLUSTER_ID = cluster_id
+            cluster_name = df_clusters[df_clusters["CLUSTER_ID"] == CLUSTER_ID]["CLUSTER_NAMES"].iloc[0]
+            PARENT_CLUSTER_ID = None
+            self.insert_cluster_data(
+                RUN_ID = RUN_ID,
+                RUN_NAME=run_name,
+                CATEGORY=CATEGORY,
+                INPUT_FILE_NAME=INPUT_FILE_NAME,
+                INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                CLUSTER_ID = CLUSTER_ID,
+                CLUSTER_NAME= cluster_name,
+                PARENT_CLUSTER_ID = PARENT_CLUSTER_ID,
+                PARENT_CLUSTER_NAME=None)
 
     
     def get_input_filename_for_rerun_subcluster(self,category_name,parent_run_name):
         # Fetch and display all records to verify insertion
-        select_query = 'SELECT INSIGHTS_FILE_NAME,CONTAINER_NAME,ACCOUNT_NAME FROM run_log WHERE CATEGORY = %s \
-            AND RUN_NAME = %s '
+       
+        print(f"Category Name : {category_name}")
+        print(f"parent_run_name : {parent_run_name}")
+        
+        select_query = """
+        SELECT INSIGHTS_FILE_NAME,
+        CONTAINER_NAME,
+        ACCOUNT_NAME 
+        FROM run_log WHERE CATEGORY = %s \
+        AND RUN_ID = %s 
+        """
         
         select_query = self.query_helper(select_query)
 
@@ -258,12 +280,13 @@ class RunManager:
         df_dropped = df
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
+        df_dropped = df_dropped.drop('CLUSTER_ID', axis=1)
 
         df = df_dropped
 
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
-        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+        cluster_ids = df_clusters['CLUSTER_ID'].unique()
         
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
@@ -282,8 +305,10 @@ class RunManager:
         INSIGHTS_FILE_NAME = file_name_insights
         PARENT_CLUSTER_NAME = None
         NUMBER_OF_SUBCLUSTERS = None
+        RUN_ID =  self.get_guid()
 
-        self.insert_run_log(run_name, 
+        self.insert_run_log(RUN_ID,
+                            run_name, 
                             NUMBER_OF_CLUSTERS, 
                             CATEGORY, 
                             INPUT_FILE_NAME, 
@@ -291,15 +316,23 @@ class RunManager:
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
-        print(f"CLUSTER Names are {cluster_names}")
+        for cluster_id in cluster_ids:
+            CLUSTER_ID = cluster_id
+            cluster_name = df_clusters[df_clusters["CLUSTER_ID"] == CLUSTER_ID]["CLUSTER_NAMES"].iloc[0]
+            PARENT_CLUSTER_ID = None
+            self.insert_cluster_data(
+                RUN_ID = RUN_ID,
+                RUN_NAME=run_name,
+                CATEGORY=CATEGORY,
+                INPUT_FILE_NAME=INPUT_FILE_NAME,
+                INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
+                CLUSTER_ID = CLUSTER_ID,
+                CLUSTER_NAME= cluster_name,
+                PARENT_CLUSTER_ID = PARENT_CLUSTER_ID,
+                PARENT_CLUSTER_NAME=None)
+
         
-        for cluster_name in cluster_names:
-            self.insert_cluster_data(RUN_NAME=run_name,
-                                     CATEGORY=CATEGORY,
-                                     INPUT_FILE_NAME=INPUT_FILE_NAME,
-                                     INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
-                                     CLUSTER_NAME= cluster_name,
-                                     PARENT_CLUSTER_NAME=None)
+
 
     def rerun_sub_cluster(self,
                     run_name,
@@ -316,11 +349,15 @@ class RunManager:
             return
         
         
-        df_parent_cluster = df[df["CLUSTER_NAMES"] == parent_cluster_name]
+        # Get the PARENT_CLUSTER_ID and PARENT_CLUSTER_NAME
+        df_parent_cluster = df[df["CLUSTER_ID"] == parent_cluster_name]
+        PARENT_CLUSTER_NAME = df_parent_cluster["CLUSTER_NAMES"].iloc[0]
+        PARENT_CLUSTER_ID = df_parent_cluster["CLUSTER_ID"].iloc[0]
         
 
         df_dropped = df_parent_cluster
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
+        df_dropped = df_dropped.drop('CLUSTER_ID', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
  
         df = df_dropped
@@ -328,7 +365,7 @@ class RunManager:
         df_clusters = self.generate_clusters(df,num_clusters,user_input=prompt)
 
 
-        cluster_names = df_clusters['CLUSTER_NAMES'].unique()
+        cluster_ids = df_clusters['CLUSTER_ID'].unique()
 
         file_name_insights = input_file_name.split(".")[0] + \
             "-"+ \
@@ -345,10 +382,10 @@ class RunManager:
         CATEGORY = category_name
         INPUT_FILE_NAME = input_file_name
         INSIGHTS_FILE_NAME = file_name_insights
-        PARENT_CLUSTER_NAME = parent_cluster_name
         NUMBER_OF_SUBCLUSTERS = num_clusters
+        RUN_ID =  self.get_guid()
 
-        self.insert_run_log(run_name, 
+        self.insert_run_log(RUN_ID,run_name, 
                             NUMBER_OF_CLUSTERS, 
                             CATEGORY, 
                             INPUT_FILE_NAME, 
@@ -356,35 +393,59 @@ class RunManager:
                             PARENT_CLUSTER_NAME,
                             NUMBER_OF_SUBCLUSTERS)
         
-        for cluster_name in cluster_names:
-            self.insert_cluster_data(RUN_NAME=run_name,
+        for cluster_id in cluster_ids:
+            CLUSTER_ID = cluster_id
+            cluster_name = df_clusters[df_clusters["CLUSTER_ID"] == CLUSTER_ID]["CLUSTER_NAMES"].iloc[0]
+
+                        #  RUN_ID,RUN_NAME, 
+                        #  CATEGORY, 
+                        #  INPUT_FILE_NAME, 
+                        #  INSIGHTS_FILE_NAME,
+                        #  CLUSTER_ID, 
+                        #  CLUSTER_NAME, 
+                        #  PARENT_CLUSTER_ID,
+                        #  PARENT_CLUSTER_NAME
+
+            self.insert_cluster_data(RUN_ID = RUN_ID,
+                                     RUN_NAME=run_name,
                                      CATEGORY=CATEGORY,
                                      INPUT_FILE_NAME=INPUT_FILE_NAME,
                                      INSIGHTS_FILE_NAME=INSIGHTS_FILE_NAME,
                                      CLUSTER_NAME= cluster_name,
-                                     PARENT_CLUSTER_NAME=PARENT_CLUSTER_NAME)
+                                     PARENT_CLUSTER_NAME=PARENT_CLUSTER_NAME,
+                                     CLUSTER_ID = CLUSTER_ID,
+                                     PARENT_CLUSTER_ID = PARENT_CLUSTER_ID)
+        return RUN_ID    
 
     def insert_run_log(self, 
+                       RUN_ID,
                        run_name, 
                        NUMBER_OF_CLUSTERS,
-                         CATEGORY, 
-                         INPUT_FILE_NAME, 
-                         INSIGHTS_FILE_NAME, 
-                         PARENT_CLUSTER_NAME, 
-                         NUMBER_OF_SUBCLUSTERS):
+                        CATEGORY, 
+                        INPUT_FILE_NAME, 
+                        INSIGHTS_FILE_NAME, 
+                        PARENT_CLUSTER_NAME, 
+                        NUMBER_OF_SUBCLUSTERS):
         
         self.db_helper.connect()
 
         insert_query = """
-    INSERT INTO run_log (RUN_NAME,  NUMBER_OF_CLUSTERS, PARENT_CLUSTER_NAME,
-                            NUMBER_OF_SUBCLUSTERS, CATEGORY, INPUT_FILE_NAME, INSIGHTS_FILE_NAME,
-                            CONTAINER_NAME,ACCOUNT_NAME)
-    VALUES (%s, %s, %s, %s, %s, %s, %s,%s, %s)
+    INSERT INTO run_log (RUN_ID,
+    RUN_NAME,
+    NUMBER_OF_CLUSTERS, 
+    PARENT_CLUSTER_NAME,
+    NUMBER_OF_SUBCLUSTERS, 
+    CATEGORY, 
+    INPUT_FILE_NAME, 
+    INSIGHTS_FILE_NAME,
+    CONTAINER_NAME,
+    ACCOUNT_NAME)
+    VALUES (%s, %s, %s, %s, %s, %s, %s,%s, %s,%s)
     """
         
         insert_query = self.query_helper(insert_query)
 
-        data = (run_name,  
+        data = ( RUN_ID,run_name,  
                 NUMBER_OF_CLUSTERS, 
                 PARENT_CLUSTER_NAME,
                 NUMBER_OF_SUBCLUSTERS, CATEGORY, 
@@ -395,11 +456,13 @@ class RunManager:
         self.db_helper.execute_query(insert_query, data)
         self.db_helper.close_connection()
 
-    def insert_cluster_data(self,RUN_NAME, 
+    def insert_cluster_data(self,RUN_ID,RUN_NAME, 
                          CATEGORY, 
                          INPUT_FILE_NAME, 
-                         INSIGHTS_FILE_NAME, 
+                         INSIGHTS_FILE_NAME,
+                         CLUSTER_ID, 
                          CLUSTER_NAME, 
+                         PARENT_CLUSTER_ID,
                          PARENT_CLUSTER_NAME):
         # Establish a connection to the database
         self.db_helper.connect()
@@ -407,24 +470,31 @@ class RunManager:
 
         # Define the insert query
         insert_query = """
-        INSERT INTO cluster_data (RUN_NAME, 
-                                CATEGORY, 
-                                INPUT_FILE_NAME, 
-                                INSIGHTS_FILE_NAME, 
-                                CLUSTER_NAME, 
-                                PARENT_CLUSTER_NAME)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO cluster_data (RUN_ID,
+        RUN_NAME, 
+        CATEGORY, 
+        INPUT_FILE_NAME, 
+        INSIGHTS_FILE_NAME,
+        CLUSTER_ID, 
+        CLUSTER_NAME, 
+        PARENT_CLUSTER_ID,
+        PARENT_CLUSTER_NAME)
+        VALUES (%s, %s, %s, %s, %s, %s,%s, %s, %s)
         """
 
         insert_query = self.query_helper(insert_query)
         
         # Prepare the data tuple
-        data = (RUN_NAME, 
-                CATEGORY, 
-                INPUT_FILE_NAME, 
-                INSIGHTS_FILE_NAME, 
-                CLUSTER_NAME, 
-                PARENT_CLUSTER_NAME)
+        data = (
+        RUN_ID,
+        RUN_NAME, 
+        CATEGORY, 
+        INPUT_FILE_NAME, 
+        INSIGHTS_FILE_NAME,
+        CLUSTER_ID, 
+        CLUSTER_NAME, 
+        PARENT_CLUSTER_ID,
+        PARENT_CLUSTER_NAME)
 
         try:
             # Execute the insert query with the provided data
@@ -459,8 +529,8 @@ class RunManager:
     def get_run_for_drilling_into_subcluster(self,
                                              cluster_name):
         # Fetch and display all records to verify insertion
-        select_query = 'SELECT RUN_NAME FROM cluster_data \
-              WHERE PARENT_CLUSTER_NAME = %s '
+        select_query = 'SELECT RUN_ID FROM cluster_data \
+              WHERE PARENT_CLUSTER_ID = %s '
         
         select_query = self.query_helper(select_query)
 
@@ -478,7 +548,7 @@ class RunManager:
             return None
     
     def get_run_names_for_category(self,category_name):
-        select_query = 'SELECT DISTINCT(RUN_NAME) FROM cluster_data \
+        select_query = 'SELECT RUN_ID,RUN_NAME FROM run_log \
               WHERE CATEGORY = %s '
         
         select_query = self.query_helper(select_query)
@@ -611,6 +681,10 @@ class RunManager:
               in the Category Log")
 
         return True
+    
+    def get_guid(self):
+        import uuid
+        return(str(uuid.uuid4()))
     
     
 
