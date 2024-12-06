@@ -366,6 +366,7 @@ class RunManager:
         df_dropped = df_parent_cluster
         df_dropped = df_dropped.drop('CLUSTERS', axis=1)
         df_dropped = df_dropped.drop('CLUSTER_NAMES', axis=1)
+        df_dropped = df_dropped.drop('CLUSTER_ID', axis=1)
  
         df = df_dropped
 
@@ -702,5 +703,30 @@ class RunManager:
         import uuid
         return(str(uuid.uuid4()))
     
-    
+    def get_category_data(self,category_name):
+
+        select_query = """
+            SELECT INPUT_FILE_NAME , 
+                    DESCRIPTION_COL , 
+                    CHALLENGE_COL , 
+                    SOLUTION_COL  
+            FROM 
+            category_data
+            WHERE CATEGORY = %s 
+            """
+        
+        select_query = self.query_helper(select_query)
+        print(select_query)
+        category_to_search = category_name
+        self.db_helper.connect()
+        records = self.db_helper.fetch_all(select_query,[category_to_search])
+        self.db_helper.close_connection()
+        if records:
+            return(records[0][0],
+                records[0][1],
+                records[0][2],
+                records[0][3],
+                )
+        else:
+            return(None,None,None,None)
 
